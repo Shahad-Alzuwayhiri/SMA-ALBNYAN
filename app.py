@@ -9,7 +9,7 @@ import models
 from pdf_utils import generate_contract_pdf
 
 app = Flask(__name__)
-app.config["SECRET_KEY"] = "CHANGE_ME_SECRET"  # بدّليها قبل النشر
+app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "CHANGE_ME_SECRET")
 csrf = CSRFProtect(app)
 
 # ===== الهوية =====

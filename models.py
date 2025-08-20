@@ -3,7 +3,9 @@
 import sqlite3, uuid
 from werkzeug.security import generate_password_hash, check_password_hash
 
-DB_NAME = "users.db"
+import os
+DB_NAME = os.environ.get("DATABASE_PATH", "users.db")
+
 
 def _conn():
     return sqlite3.connect(DB_NAME)

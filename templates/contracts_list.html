@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}العقود - {{ BRAND.name }}{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <h2 class="m-0">العقود</h2>
+  <a class="btn brand-btn" href="{{ url_for('contracts_create') }}">+ عقد جديد</a>
+</div>
+
+{% if items and items|length %}
+<table class="table table-striped align-middle">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>العنوان</th>
+      <th>التسلسلي</th>
+      <th>التاريخ</th>
+      <th>إجراءات</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for id_, title, serial, created_at in items %}
+    <tr>
+      <td>{{ id_ }}</td>
+      <td>{{ title }}</td>
+      <td><span class="badge text-bg-secondary">{{ serial }}</span></td>
+      <td>{{ created_at }}</td>
+      <td class="d-flex gap-2">
+        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('contracts_detail', cid=id_) }}">عرض</a>
+        <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('contracts_edit', cid=id_) }}">تعديل</a>
+        <a class="btn btn-sm btn-outline-success" target="_blank" href="{{ url_for('contracts_pdf', cid=id_) }}">PDF</a>
+        <form method="post" action="{{ url_for('contracts_delete', cid=id_) }}" onsubmit="return confirm('حذف العقد؟');">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn btn-sm btn-outline-danger">حذف</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="alert alert-secondary">لا توجد عقود بعد.</div>
+{% endif %}
+{% endblock %}

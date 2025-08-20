@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}تعديل العقد - {{ BRAND.name }}{% endblock %}
+{% block content %}
+{% set id_, title, content, serial, created_at = item %}
+<div class="card brand-top">
+  <div class="card-body p-4 p-md-5">
+    <h3 class="mb-3 brand-name">تعديل العقد</h3>
+    <form method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="mb-3">
+        <label class="form-label">عنوان العقد</label>
+        <input class="form-control" name="title" value="{{ title }}" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">نص العقد</label>
+        <textarea class="form-control" name="content" rows="10" required>{{ content }}</textarea>
+      </div>
+      <button class="btn brand-btn">حفظ التعديلات</button>
+      <a class="btn btn-outline-secondary" href="{{ url_for('contracts_detail', cid=id_) }}">إلغاء</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

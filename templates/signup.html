@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}إنشاء حساب - {{ BRAND.name }}{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-12 col-lg-8">
+    <div class="card brand-top">
+      <div class="card-body p-4 p-md-5">
+        <div class="text-center mb-4">
+          <img src="{{ url_for('static', filename='img/logo.png') }}" alt="logo" height="56">
+          <h3 class="mt-3 mb-0 brand-name">تسجيل حساب موظف</h3>
+        </div>
+
+        <form id="signupForm" method="POST" novalidate>
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">الاسم الكامل</label>
+              <input type="text" name="name" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">رقم الجوال</label>
+              <input type="tel" name="phone" class="form-control" placeholder="05XXXXXXXX" required>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">البريد الإلكتروني</label>
+              <input type="email" name="email" class="form-control" required autocomplete="email">
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">كلمة المرور</label>
+              <div class="input-group">
+                <input type="password" name="password" id="password" class="form-control" required minlength="8" autocomplete="new-password">
+                <button class="btn btn-outline-secondary" type="button" id="togglePassword">👁</button>
+              </div>
+              <div class="form-text">8 خانات على الأقل.</div>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">تأكيد كلمة المرور</label>
+              <div class="input-group">
+                <input type="password" name="confirm_password" id="confirm_password" class="form-control" required minlength="8" autocomplete="new-password">
+                <button class="btn btn-outline-secondary" type="button" id="toggleConfirm">👁</button>
+              </div>
+              <div id="matchMsg" class="form-text text-danger d-none">❌ كلمتا المرور غير متطابقتين</div>
+            </div>
+          </div>
+
+          <button class="btn w-100 mt-3 brand-btn">إنشاء الحساب</button>
+        </form>
+
+        <p class="text-center mt-3 mb-0">
+          عندك حساب؟ <a href="{{ url_for('login') }}">سجّل الدخول</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  const pw=document.getElementById('password');
+  const cpw=document.getElementById('confirm_password');
+  const msg=document.getElementById('matchMsg');
+  const form=document.getElementById('signupForm');
+
+  function checkMatch(){
+    if(!pw.value || !cpw.value){ msg.classList.add('d-none'); return true; }
+    const same=pw.value===cpw.value;
+    msg.textContent=same?'✅ كلمتا المرور متطابقتان':'❌ كلمتا المرور غير متطابقتين';
+    msg.classList.toggle('text-success', same);
+    msg.classList.toggle('text-danger', !same);
+    msg.classList.remove('d-none');
+    return same;
+  }
+  pw.addEventListener('input', checkMatch);
+  cpw.addEventListener('input', checkMatch);
+  form.addEventListener('submit', (e)=>{ if(!checkMatch()){ e.preventDefault(); cpw.focus(); } });
+  document.getElementById('togglePassword').onclick=()=>{ pw.type=pw.type==='password'?'text':'password'; };
+  document.getElementById('toggleConfirm').onclick=()=>{ cpw.type=cpw.type==='password'?'text':'password'; };
+</script>
+{% endblock %}

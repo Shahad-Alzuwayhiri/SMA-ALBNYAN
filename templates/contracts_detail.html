@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}تفاصيل العقد - {{ BRAND.name }}{% endblock %}
+{% block content %}
+{% set id_, title, content, serial, created_at = item %}
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <h2 class="m-0">{{ title }}</h2>
+  <div class="d-flex gap-2">
+    <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('contracts_edit', cid=id_) }}">تعديل</a>
+    <a class="btn btn-outline-success btn-sm" target="_blank" href="{{ url_for('contracts_pdf', cid=id_) }}">PDF</a>
+  </div>
+</div>
+
+<p class="text-muted">الرقم التسلسلي: <span class="badge text-bg-secondary">{{ serial }}</span> — {{ created_at }}</p>
+<div class="card">
+  <div class="card-body">
+    <pre class="m-0" style="white-space:pre-wrap">{{ content }}</pre>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}لوحة التحكم - {{ BRAND.name }}{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <h2 class="m-0">لوحة التحكم</h2>
+  <a class="btn brand-btn" href="{{ url_for('contracts_create') }}">+ عقد جديد</a>
+</div>
+<div class="alert alert-info">استخدمي قائمة "العقود" لإدارة عقودك.</div>
+{% endblock %}

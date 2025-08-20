@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: contractsama
+    env: python
+    plan: free
+    region: frankfurt
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn app:app"
+    envVars:
+      - key: SECRET_KEY
+        sync: false  # ضيفيه يدويًا من لوحة Render
+      - key: DATABASE_PATH
+        value: /opt/render/project/src/data/users.db
+    disk:
+      name: db-disk
+      mountPath: /opt/render/project/src/data
+      sizeGB: 1

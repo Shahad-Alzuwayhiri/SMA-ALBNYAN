@@ -1,23 +1,58 @@
 {% extends "base.html" %}
-{% block title %}تعديل العقد - {{ BRAND.name }}{% endblock %}
+{% block title %}تعديل العقد{% endblock %}
 {% block content %}
-{% set id_, title, content, serial, created_at = item %}
-<div class="card brand-top">
-  <div class="card-body p-4 p-md-5">
-    <h3 class="mb-3 brand-name">تعديل العقد</h3>
-    <form method="POST">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <div class="mb-3">
-        <label class="form-label">عنوان العقد</label>
-        <input class="form-control" name="title" value="{{ title }}" required>
+<div class="container">
+  <h3 class="mb-3">تعديل العقد</h3>
+  <form method="POST" class="card p-3">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="mb-3">
+      <label class="form-label">العنوان</label>
+      <input name="title" class="form-control" required value="{{ item.title }}">
+    </div>
+    <div class="mb-3">
+      <label class="form-label">نص العقد</label>
+      <textarea name="content" class="form-control" rows="12" required>{{ item.content }}</textarea>
+    </div>
+
+    <div class="row g-2">
+      <div class="col-md-4">
+        <label class="form-label">العميل</label>
+        <input name="client_name" class="form-control" value="{{ item.client_name or '' }}">
       </div>
-      <div class="mb-3">
-        <label class="form-label">نص العقد</label>
-        <textarea class="form-control" name="content" rows="10" required>{{ content }}</textarea>
+      <div class="col-md-4">
+        <label class="form-label">الهوية/السجل</label>
+        <input name="client_id_number" class="form-control" value="{{ item.client_id_number or '' }}">
       </div>
-      <button class="btn brand-btn">حفظ التعديلات</button>
-      <a class="btn btn-outline-secondary" href="{{ url_for('contracts_detail', cid=id_) }}">إلغاء</a>
-    </form>
-  </div>
+      <div class="col-md-4">
+        <label class="form-label">الجوال</label>
+        <input name="client_phone" class="form-control" value="{{ item.client_phone or '' }}">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">العنوان</label>
+        <input name="client_address" class="form-control" value="{{ item.client_address or '' }}">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">مبلغ المشاركة</label>
+        <input name="investment_amount" class="form-control" value="{{ item.investment_amount or '' }}" inputmode="decimal" placeholder="مثال: 250000">
+        <!-- عرض رمز الريال السعودي بجانب القيمة الحالية (اختياري بصريًا) -->
+        {% if item.investment_amount %}
+          <div class="form-text" style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+            <span>{{ "{:,.2f}".format(item.investment_amount|float) }}</span>
+            <img src="{{ url_for('static', filename='img/Saudi_Riyal_Symbol.svg.png') }}" 
+              alt="SAR" style="height:18px;vertical-align:middle;margin-right:4px;">
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="btn-row">
+  <button class="btn btn-secondary" name="action" value="preview" type="submit">👁 معاينة</button>
+  <button class="btn btn-primary"   name="action" value="save"    type="submit">حفظ</button>
+  <button class="btn btn-outline-primary" name="action" value="save_back" type="submit">حفظ والرجوع</button>
+  <button class="btn btn-success"   name="action" value="save_pdf" type="submit">حفظ + PDF</button>
+  <a class="btn btn-light" href="{{ url_for('contracts_list') }}">إلغاء</a>
+</div>
+
+  </form>
 </div>
 {% endblock %}

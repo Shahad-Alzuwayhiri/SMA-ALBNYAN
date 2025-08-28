@@ -1,19 +1,78 @@
-{% extends "base.html" %}
-{% block title %}تفاصيل العقد - {{ BRAND.name }}{% endblock %}
+{% extends "base.html" %} 
+{% block title %}تفاصيل العقد{% endblock %}
 {% block content %}
-{% set id_, title, content, serial, created_at = item %}
-<div class="d-flex align-items-center justify-content-between mb-3">
-  <h2 class="m-0">{{ title }}</h2>
-  <div class="d-flex gap-2">
-    <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('contracts_edit', cid=id_) }}">تعديل</a>
-    <a class="btn btn-outline-success btn-sm" target="_blank" href="{{ url_for('contracts_pdf', cid=id_) }}">PDF</a>
+<div class="container">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h3>عقد #{{ item.id }}</h3>
+    <div class="d-flex gap-2">
+      <a class="btn btn-success" href="{{ url_for('contracts_pdf', cid=item.id) }}">فتح PDF</a>
+      <a class="btn btn-outline-primary" href="{{ url_for('contracts_edit', cid=item.id) }}">تعديل</a>
+      <form method="POST" action="{{ url_for('contracts_delete', cid=item.id) }}" onsubmit="return confirm('حذف العقد؟')" class="d-inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-outline-danger">حذف</button>
+      </form>
+    </div>
   </div>
+
+  {% if current_user.is_authenticated and current_user.role == 'manager' and (item.status == 'pending') %}
+    <div class="alert alert-warning d-flex align-items-center justify-content-between">
+      <div>هذا العقد بانتظار اعتماد المدير.</div>
+      <div class="d-flex gap-2">
+        <form method="post" action="{{ url_for('manager_approve_contract', cid=item.id) }}" class="d-inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="text" name="note" class="form-control d-inline-block" style="width: 200px" placeholder="ملاحظة (اختياري)">
+          <button class="btn btn-success btn-sm">اعتماد</button>
+        </form>
+        <form method="post" action="{{ url_for('manager_reject_contract', cid=item.id) }}" class="d-inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="text" name="note" class="form-control d-inline-block" style="width: 200px" placeholder="سبب الرفض">
+          <button class="btn btn-outline-danger btn-sm">رفض</button>
+        </form>
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="card p-3">
+    <div class="mb-2">
+      <strong>الرقم:</strong>
+      <span class="badge bg-info">{{ item.client_contract_no or item.internal_serial }}</span>
+    </div>
+    <div><strong>الحالة:</strong>
+      {% if item.status=='pending' %} بانتظار الاعتماد
+      {% elif item.status=='approved' %} معتمدة
+      {% else %} مرفوضة{% endif %}
+    </div>
+    {% if item.manager_note %}
+      <div><strong>ملاحظة المدير:</strong> {{ item.manager_note }}</div>
+    {% endif %}
+    <div><strong>العميل:</strong> {{ item.client_name or '-' }}</div>
+    <div><strong>هوية/سجل:</strong> {{ item.client_id_number or '-' }}</div>
+    <div><strong>جوال:</strong> {{ item.client_phone or '-' }}</div>
+    <div><strong>عنوان:</strong> {{ item.client_address or '-' }}</div>
+
+    <div>
+  <strong>مبلغ المشاركة:</strong>
+  {% if item.investment_amount %}
+    <span>{{ "{:,.2f}".format(item.investment_amount) }}</span>
+    <img src="{{ url_for('static', filename='img/Saudi_Riyal_Symbol.svg.png') }}" 
+         alt="SAR" style="height:18px;vertical-align:middle;margin-right:4px;">
+  {% else %}
+    -
+  {% endif %}
 </div>
 
-<p class="text-muted">الرقم التسلسلي: <span class="badge text-bg-secondary">{{ serial }}</span> — {{ created_at }}</p>
-<div class="card">
-  <div class="card-body">
-    <pre class="m-0" style="white-space:pre-wrap">{{ content }}</pre>
+
+    <hr>
+    <h5>العنوان</h5>
+    <p>{{ item.title }}</p>
+    <h5>نص العقد</h5>
+    <pre style="white-space:pre-wrap">{{ item.content }}</pre>
+
+    {% if item.signature_path %}
+      <hr>
+      <h6>التوقيع</h6>
+      <img src="{{ url_for('static', filename=item.signature_path.split('static/')[1] if 'static/' in item.signature_path else item.signature_path) }}" alt="signature" style="max-width:260px">
+    {% endif %}
   </div>
 </div>
 {% endblock %}

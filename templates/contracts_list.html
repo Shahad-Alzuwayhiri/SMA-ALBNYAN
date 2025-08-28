@@ -1,43 +1,75 @@
 {% extends "base.html" %}
-{% block title %}العقود - {{ BRAND.name }}{% endblock %}
+{% block title %}العقود{% endblock %}
 {% block content %}
 <div class="d-flex align-items-center justify-content-between mb-3">
-  <h2 class="m-0">العقود</h2>
-  <a class="btn brand-btn" href="{{ url_for('contracts_create') }}">+ عقد جديد</a>
+  <h2 style="margin:0;color:var(--brand-navy)">العقود</h2>
+  <a class="btn btn-accent" href="{{ url_for('contracts_create') }}">➕ عقد جديد</a>
 </div>
 
-{% if items and items|length %}
-<table class="table table-striped align-middle">
-  <thead>
-    <tr>
-      <th>#</th>
-      <th>العنوان</th>
-      <th>التسلسلي</th>
-      <th>التاريخ</th>
-      <th>إجراءات</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for id_, title, serial, created_at in items %}
-    <tr>
-      <td>{{ id_ }}</td>
-      <td>{{ title }}</td>
-      <td><span class="badge text-bg-secondary">{{ serial }}</span></td>
-      <td>{{ created_at }}</td>
-      <td class="d-flex gap-2">
-        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('contracts_detail', cid=id_) }}">عرض</a>
-        <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('contracts_edit', cid=id_) }}">تعديل</a>
-        <a class="btn btn-sm btn-outline-success" target="_blank" href="{{ url_for('contracts_pdf', cid=id_) }}">PDF</a>
-        <form method="post" action="{{ url_for('contracts_delete', cid=id_) }}" onsubmit="return confirm('حذف العقد؟');">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <button class="btn btn-sm btn-outline-danger">حذف</button>
-        </form>
-      </td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
-{% else %}
-<div class="alert alert-secondary">لا توجد عقود بعد.</div>
-{% endif %}
+<form class="d-flex gap-2 mb-3">
+  <input type="text" name="q" class="form-control" placeholder="ابحث بالعنوان/العميل/الرقم" value="{{ q or '' }}">
+  <button class="btn btn-primary">بحث</button>
+  <a class="btn btn-light border" href="{{ url_for('contracts_list') }}">مسح</a>
+</form>
+
+<div class="table-responsive">
+  <table class="table align-middle">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>العنوان</th>
+        <th>الرقم</th>
+        <th>العميل</th>
+        <th>التاريخ</th>
+        <th>الحالة</th>
+        <th>إجراءات</th>
+      </tr>
+    </thead>
+    <tbody>
+      {# ندعم شكلين:
+         - عنصر بطول 5: (cid, title, shown_no, created_at, client_name)
+         - عنصر بطول 6+: نفس السابق + status في index 5  #}
+      {% for item in items %}
+        {% set cid = item[0] %}
+        {% set title = item[1] %}
+        {% set shown_no = item[2] %}
+        {% set created_at = item[3] %}
+        {% set client_name = item[4] %}
+        {% set status = (item[5] if item|length > 5 else None) %}
+
+        <tr>
+          <td style="white-space:nowrap">{{ cid }}</td>
+          <td>{{ title }}</td>
+          <td><span class="badge bg-info">{{ shown_no }}</span></td>
+          <td>{{ client_name or '-' }}</td>
+          <td style="white-space:nowrap">{{ created_at }}</td>
+          <td>
+            {% if status %}
+              {% if status == 'approved' %}
+                <span class="badge bg-success">معتمدة</span>
+              {% elif status == 'rejected' %}
+                <span class="badge bg-danger">مرفوضة</span>
+              {% else %}
+                <span class="badge bg-warning text-dark">بانتظار الاعتماد</span>
+              {% endif %}
+            {% else %}
+              <span class="badge bg-secondary">—</span>
+            {% endif %}
+          </td>
+          <td class="d-flex gap-2" style="flex-wrap:wrap">
+            <a class="btn btn-outline-primary btn-sm" href="{{ url_for('contracts_detail', cid=cid) }}">عرض</a>
+            <a class="btn btn-success btn-sm" href="{{ url_for('contracts_pdf', cid=cid) }}">PDF</a>
+            <a class="btn btn-accent btn-sm" href="{{ url_for('contracts_edit', cid=cid) }}">تعديل</a>
+            <form method="POST" action="{{ url_for('contracts_delete', cid=cid) }}" onsubmit="return confirm('حذف العقد؟')" class="d-inline" style="display:inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="btn btn-outline-danger btn-sm">حذف</button>
+            </form>
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="7" class="text-center text-muted">لا توجد عقود</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
 {% endblock %}

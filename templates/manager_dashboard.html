@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}لوحة المدير{% endblock %}
+{% block content %}
+
+<div class="container">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h3 style="margin:0;color:var(--brand-navy)">لوحة المدير</h3>
+    <form class="d-flex gap-2" method="get" role="search" aria-label="تصفية العقود">
+      <input type="text" name="q" class="form-control" placeholder="بحث بالعنوان/العميل/الرقم" value="{{ q or '' }}" aria-label="بحث">
+      <select name="status" class="form-select" aria-label="الحالة">
+        <option value="pending"  {% if status=='pending' %}selected{% endif %}>بانتظار الاعتماد</option>
+        <option value="approved" {% if status=='approved' %}selected{% endif %}>معتمدة</option>
+        <option value="rejected" {% if status=='rejected' %}selected{% endif %}>مرفوضة</option>
+      </select>
+      <button class="btn btn-primary" type="submit">تصفية</button>
+      <a class="btn btn-light border" href="{{ url_for('manager_dashboard') }}">مسح</a>
+    </form>
+  </div>
+
+  <div class="table-responsive card">
+    <table class="table table-striped align-middle" style="margin:0;">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>العنوان</th>
+          <th>الرقم</th>
+          <th>العميل</th>
+          <th>تاريخ الإنشاء</th>
+          <th>الحالة</th>
+          <th style="width: 300px;">إجراء</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in items %}
+          {# row: (id, title, shown_no, created_at, client_name, status, manager_note) #}
+          <tr>
+            <td>{{ row[0] }}</td>
+            <td>
+              <a href="{{ url_for('contracts_detail', cid=row[0]) }}" class="link">
+                {{ row[1] }}
+              </a>
+            </td>
+            <td><span class="badge bg-info">{{ row[2] }}</span></td>
+            <td>{{ row[4] or '-' }}</td>
+            <td>{{ row[3] }}</td>
+            <td>
+              {% if row[5]=='pending' %}
+                <span class="badge bg-warning">بانتظار الاعتماد</span>
+              {% elif row[5]=='approved' %}
+                <span class="badge bg-success">معتمدة</span>
+              {% else %}
+                <span class="badge bg-danger">مرفوضة</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if row[5]=='pending' %}
+                <form method="post" action="{{ url_for('manager_approve_contract', cid=row[0]) }}" class="d-inline" aria-label="اعتماد العقد">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <input type="text" name="note" class="form-control d-inline-block" style="width: 160px" placeholder="ملاحظة (اختياري)" aria-label="ملاحظة">
+                  <button class="btn btn-success btn-sm" type="submit">اعتماد</button>
+                </form>
+                <form method="post" action="{{ url_for('manager_reject_contract', cid=row[0]) }}" class="d-inline ms-1" aria-label="رفض العقد">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <input type="text" name="note" class="form-control d-inline-block" style="width: 160px" placeholder="سبب الرفض" aria-label="سبب الرفض">
+                  <button class="btn btn-outline-danger btn-sm" type="submit">رفض</button>
+                </form>
+              {% else %}
+                <div class="text-muted small">
+                  {% if row[6] %}ملاحظة: {{ row[6] }}{% else %}-{% endif %}
+                </div>
+              {% endif %}
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="7" class="text-center text-muted">لا يوجد عناصر</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

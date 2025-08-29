@@ -1,0 +1,8 @@
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.grid .span2{grid-column:span 2}
+.kpi{display:flex;align-items:center;justify-content:space-between}
+.kpi .k{color:#64748b}
+.kpi .v{font-size:28px;font-weight:800;color:var(--brand-navy)}
+.list{list-style:none;padding:0;margin:0}
+.list li{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed #e5e7eb}
+@media (max-width:1000px){.grid{grid-template-columns:1fr}}

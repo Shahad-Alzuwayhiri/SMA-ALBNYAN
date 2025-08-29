@@ -12,8 +12,8 @@
         <div class="form-row">
           <label class="form-label" for="role">نوع الحساب</label>
           <select class="input" id="role" name="role" required>
-            <option value="employee" {{ 'selected' if (request.form.role or '')!='manager' else '' }}>موظف</option>
-            <option value="manager"  {{ 'selected' if (request.form.role or '')=='manager' else '' }}>مدير</option>
+            <option value="employee" {% if (request.form.role or '') != 'manager' %}selected{% endif %}>موظف</option>
+            <option value="manager"  {% if (request.form.role or '') == 'manager' %}selected{% endif %}>مدير</option>
           </select>
         </div>
           

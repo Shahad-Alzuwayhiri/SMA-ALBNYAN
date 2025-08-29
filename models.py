@@ -2,7 +2,7 @@
 # © 2025 ContractSama. All rights reserved.
 
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Tuple, List
 
 from sqlalchemy import (
@@ -54,6 +54,36 @@ def user_dashboard_metrics(user_id: int) -> dict:
     finally:
         session.close()
 
+def user_contract_status_counts(user_id: int) -> dict:
+    """إحصاء العقود حسب الحالة لموظف معين."""
+    session = get_session()
+    try:
+        rows = (
+            session.query(Contract.status, func.count(Contract.id))
+            .filter(Contract.user_id == user_id)
+            .group_by(Contract.status)
+            .all()
+        )
+        return {status: count for status, count in rows}
+    finally:
+        session.close()
+
+
+def manager_contract_status_counts() -> dict:
+    """إحصاء جميع العقود حسب الحالة للمدير."""
+    session = get_session()
+    try:
+        total = session.query(func.count(Contract.id)).scalar() or 0
+        rows = (
+            session.query(Contract.status, func.count(Contract.id))
+            .group_by(Contract.status)
+            .all()
+        )
+        out = {status: count for status, count in rows}
+        out["total"] = total
+        return out
+    finally:
+        session.close()
 # -------------------------------------------------------------------
 # نماذج الجداول
 # -------------------------------------------------------------------
@@ -68,7 +98,7 @@ class User(Base):
     role          = Column(String(20), nullable=False, default="employee")  # employee / manager
     stamp_path    = Column(String(255), nullable=True)  # ختم المدير (اختياري)
 
-    created_at    = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at    = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
     contracts     = relationship("Contract", back_populates="user")
 
@@ -94,7 +124,7 @@ class Contract(Base):
     internal_serial   = Column(Integer, nullable=False)               # الرقم التسلسلي الداخلي
     client_contract_no= Column(String(50), nullable=False, unique=True)  # رقم العقد المعروض للعميل (PREFIX-0001 ...)
 
-    created_at        = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at        = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
     # بيانات العميل
     client_name       = Column(String(120), nullable=True)
@@ -145,6 +175,76 @@ class ContractNumberCounter(Base):
     prefix  = Column(String(50), nullable=False, unique=True)
     last_no = Column(Integer, nullable=False, default=0)
 
+# ========= Notifications =========
+from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, ForeignKey, func
+from sqlalchemy.orm import relationship
+
+class Notification(Base):
+    __tablename__ = "notifications"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    title = Column(String(200), nullable=False)
+    body = Column(Text, nullable=True)
+    link = Column(String(300), nullable=True)  # مثال: url_for('contracts_detail', cid=..)
+    is_read = Column(Boolean, default=False)
+    created_at = Column(DateTime, server_default=func.now(), nullable=False)
+
+    user = relationship("User")
+
+def create_notification(user_id: int, title: str, body: str = None, link: str = None):
+    s = get_session()
+    try:
+        n = Notification(user_id=user_id, title=title, body=body, link=link)
+        s.add(n)
+        s.commit()
+        return n.id
+    except Exception:
+        s.rollback()
+        return None
+    finally:
+        s.close()
+
+def list_notifications(user_id: int, unread_only: bool = False, limit: int = 50):
+    s = get_session()
+    try:
+        q = s.query(Notification).filter(Notification.user_id == user_id)\
+                                 .order_by(Notification.created_at.desc())
+        if unread_only:
+            q = q.filter(Notification.is_read == False)
+        return q.limit(limit).all()
+    finally:
+        s.close()
+
+def mark_notification_read(nid: int, user_id: int):
+    s = get_session()
+    try:
+        n = s.query(Notification).filter(Notification.id == nid,
+                                         Notification.user_id == user_id).first()
+        if not n:
+            return False
+        if not n.is_read:
+            n.is_read = True
+            s.commit()
+        return True
+    except Exception:
+        s.rollback()
+        return False
+    finally:
+        s.close()
+
+def mark_all_notifications_read(user_id: int):
+    s = get_session()
+    try:
+        s.query(Notification).filter(Notification.user_id == user_id,
+                                     Notification.is_read == False)\
+                             .update({Notification.is_read: True}, synchronize_session=False)
+        s.commit()
+        return True
+    except Exception:
+        s.rollback()
+        return False
+    finally:
+        s.close()
 
 # -------------------------------------------------------------------
 # تهيئة القاعدة والـ Session
@@ -461,7 +561,36 @@ def list_contracts(user_id: int, q: Optional[str]) -> List[Tuple[int, str, str, 
     finally:
         s.close()
 
-
+def recent_contract_updates(user_id: int, limit: int = 5) -> List[Tuple[str, str, str, str]]:
+    """أحدث تحديثات حالة العقود لموظف معين."""
+    s = get_session()
+    try:
+        stmt = (
+            select(
+                Contract.title,
+                Contract.client_contract_no,
+                Contract.status,
+                Contract.created_at,
+            )
+            .where(
+                Contract.user_id == user_id,
+                Contract.status.in_(["approved", "rejected"]),
+            )
+            .order_by(Contract.created_at.desc())
+            .limit(limit)
+        )
+        rows = s.execute(stmt).all()
+        return [
+            (
+                r[0],
+                r[1],
+                r[2],
+                r[3].strftime("%Y-%m-%d %H:%M:%S"),
+            )
+            for r in rows
+        ]
+    finally:
+        s.close()
 # -------------------------------------------------------------------
 # دوال المدير (اعتماد/رفض + قائمة)
 # -------------------------------------------------------------------
@@ -483,6 +612,33 @@ def manager_set_status(cid: int, *, approve: bool, note: Optional[str]) -> bool:
     except Exception:
         s.rollback()
         return False
+    finally:
+        s.close()
+def recent_pending_contracts(limit: int = 5) -> List[Tuple[int, str, str, str]]:
+    """أحدث العقود قيد الانتظار للعرض السريع في لوحة المدير."""
+    s = get_session()
+    try:
+        stmt = (
+            select(
+                Contract.id,
+                Contract.title,
+                Contract.client_contract_no,
+                Contract.created_at,
+            )
+            .where(Contract.status == "pending")
+            .order_by(Contract.created_at.desc())
+            .limit(limit)
+        )
+        rows = s.execute(stmt).all()
+        return [
+            (
+                r[0],
+                r[1],
+                r[2],
+                r[3].strftime("%Y-%m-%d %H:%M:%S"),
+            )
+            for r in rows
+        ]
     finally:
         s.close()
 

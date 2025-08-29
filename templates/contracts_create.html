@@ -1,163 +1,129 @@
+<!DOCTYPE html>
+<html lang="ar">
 {% extends "base.html" %}
 {% block title %}عقد جديد{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/contracts.css') }}">{% endblock %}
 {% block content %}
 <div class="card p-3">
-  <div class="d-flex align-items-center justify-content-between mb-2">
-    <h3 style="margin:0;">إنشاء عقد جديد</h3>
-    <div class="alert alert-info" style="margin:0;">رقم العقد سيتولّد تلقائيًا: <strong>{{ generated_no }}</strong></div>
+  <div class="d-flex align-items-center justify-content-between mb-2" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+    <h3 class="m-0">إنشاء عقد جديد</h3>
+    <div class="alert alert-info m-0">رقم العقد سيتولّد تلقائيًا: <strong>{{ generated_no }}</strong></div>
   </div>
 
   <form method="POST">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" id="csrf_token" name="csrf_token" value="{{ csrf_token() }}">
 
-    <!-- معلومات الاجتماع -->
     <div class="row">
-      <div class="col-md-12"><h4 class="mb-2" style="color:var(--brand-navy)">معلومات الاجتماع</h4></div>
+      <div class="col-md-12"><h4 class="mb-2 text-brand">معلومات الاجتماع</h4></div>
       <div class="col-md-4">
-        <label class="form-label">اسم اليوم</label>
-        <input name="meeting_day_name" class="form-control" required value="{{ formvals.meeting_day_name or '' }}">
+        <label class="form-label" for="meeting_day_name">اسم اليوم</label>
+        <input id="meeting_day_name" name="meeting_day_name" class="form-control" required value="{{ formvals.meeting_day_name or '' }}">
       </div>
       <div class="col-md-4">
-        <label class="form-label">تاريخ الاجتماع (هجري)</label>
-        <input name="meeting_date_h" class="form-control" required value="{{ formvals.meeting_date_h or '' }}">
+        <label class="form-label" for="meeting_date_h">تاريخ الاجتماع (هجري)</label>
+        <input id="meeting_date_h" name="meeting_date_h" class="form-control" required value="{{ formvals.meeting_date_h or '' }}">
       </div>
       <div class="col-md-4">
-        <label class="form-label">المدينة</label>
-        <input name="city" class="form-control" required value="{{ formvals.city or 'جدة' }}">
+        <label class="form-label" for="city">المدينة</label>
+        <input id="city" name="city" class="form-control" required value="{{ formvals.city or 'جدة' }}">
       </div>
     </div>
 
-    <!-- بيانات الطرف الثاني -->
     <div class="row mt-3">
-      <div class="col-md-12"><h4 class="mb-2" style="color:var(--brand-navy)">بيانات الطرف الثاني</h4></div>
+      <div class="col-md-12"><h4 class="mb-2 text-brand">بيانات الطرف الثاني</h4></div>
       <div class="col-md-6">
-        <label class="form-label">الاسم</label>
-        <input name="partner2_name" class="form-control" required value="{{ formvals.partner2_name or '' }}">
+        <label class="form-label" for="partner2_name">الاسم</label>
+        <input id="partner2_name" name="partner2_name" class="form-control" required value="{{ formvals.partner2_name or '' }}">
       </div>
       <div class="col-md-3">
-        <label class="form-label">الهوية/السجل</label>
-        <input name="sign2_id" class="form-control" required inputmode="numeric" placeholder="10-15 رقم" value="{{ formvals.sign2_id or '' }}">
+        <label class="form-label" for="sign2_id">الهوية/السجل</label>
+        <input id="sign2_id" name="sign2_id" class="form-control" required inputmode="numeric" placeholder="10-15 رقم" value="{{ formvals.sign2_id or '' }}">
       </div>
       <div class="col-md-3">
-        <label class="form-label">الجوال</label>
-        <input name="sign2_phone" class="form-control" required inputmode="numeric" placeholder="05XXXXXXXX" value="{{ formvals.sign2_phone or '' }}">
+        <label class="form-label" for="sign2_phone">الجوال</label>
+        <input id="sign2_phone" name="sign2_phone" class="form-control" required inputmode="numeric" placeholder="05XXXXXXXX" value="{{ formvals.sign2_phone or '' }}">
       </div>
       <div class="col-md-12">
-        <label class="form-label">العنوان</label>
-        <input name="client_address" class="form-control" required value="{{ formvals.client_address or '' }}">
+        <label class="form-label" for="client_address">العنوان</label>
+        <input id="client_address" name="client_address" class="form-control" required value="{{ formvals.client_address or '' }}">
       </div>
 
-      <!-- مبلغ المشاركة (﷼) -->
       <div class="col-md-6">
-        <label class="form-label">مبلغ المشاركة</label>
+        <label class="form-label" for="investment_amount">مبلغ المشاركة</label>
         <div class="input-group">
-          <input name="investment_amount" class="form-control" required inputmode="decimal" step="0.01"
-                 value="{{ formvals.investment_amount or '' }}">
-          <img src="{{ url_for('static', filename='img/Saudi_Riyal_Symbol.svg.png') }}" 
-         alt="SAR" style="height:18px;vertical-align:middle;margin-right:4px;">
+          <input id="investment_amount" name="investment_amount" class="form-control" required inputmode="decimal" step="0.01" value="{{ formvals.investment_amount or '' }}">
+          <img src="{{ url_for('static', filename='img/Saudi_Riyal_Symbol.svg.png') }}" alt="SAR" class="riyal-icon">
         </div>
       </div>
     </div>
 
-    <!-- تفاصيل مالية -->
     <div class="row mt-3">
-      <div class="col-md-12"><h4 class="mb-2" style="color:var(--brand-navy)">تفاصيل مالية</h4></div>
-
-      <!-- رأس المال (﷼) -->
+      <div class="col-md-12"><h4 class="mb-2 text-brand">تفاصيل مالية</h4></div>
       <div class="col-md-4">
-        <label class="form-label">رأس المال (يُذكر في العقد)</label>
+        <label class="form-label" for="capital_amount">رأس المال (يُذكر في العقد)</label>
         <div class="input-group">
-          <input name="capital_amount" class="form-control" required inputmode="decimal" step="0.01"
-                 value="{{ formvals.capital_amount or '' }}">
-           <img src="{{ url_for('static', filename='img/Saudi_Riyal_Symbol.svg.png') }}" 
-         alt="SAR" style="height:18px;vertical-align:middle;margin-right:4px;">
+          <input id="capital_amount" name="capital_amount" class="form-control" required inputmode="decimal" step="0.01" value="{{ formvals.capital_amount or '' }}">
+          <img src="{{ url_for('static', filename='img/Saudi_Riyal_Symbol.svg.png') }}" alt="SAR" class="riyal-icon">
         </div>
       </div>
-
-      <!-- نسبة الربح (%) -->
       <div class="col-md-4">
-        <label class="form-label">نسبة ربح الطرف الثاني</label>
+        <label class="form-label" for="profit_percent">نسبة ربح الطرف الثاني</label>
         <div class="input-group">
-          <input name="profit_percent" class="form-control" required inputmode="decimal" step="0.01"
-                 value="{{ formvals.profit_percent or '30' }}">
+          <input id="profit_percent" name="profit_percent" class="form-control" required inputmode="decimal" step="0.01" value="{{ formvals.profit_percent or '30' }}">
           <span class="input-group-text">%</span>
         </div>
       </div>
-
       <div class="col-md-4">
-        <label class="form-label">دورية أرباح (أشهر)</label>
-        <input name="profit_interval_months" class="form-control" required inputmode="numeric"
-               value="{{ formvals.profit_interval_months or '6' }}">
+        <label class="form-label" for="profit_interval_months">دورية أرباح (أشهر)</label>
+        <input id="profit_interval_months" name="profit_interval_months" class="form-control" required inputmode="numeric" value="{{ formvals.profit_interval_months or '6' }}">
       </div>
     </div>
 
-    <!-- مواعيد -->
     <div class="row mt-3">
-      <div class="col-md-12"><h4 class="mb-2" style="color:var(--brand-navy)">مواعيد</h4></div>
+      <div class="col-md-12"><h4 class="mb-2 text-brand">مواعيد</h4></div>
       <div class="col-md-4">
-        <label class="form-label">إخطار السحب (أيام)</label>
-        <input name="withdrawal_notice_days" class="form-control" required inputmode="numeric"
-               value="{{ formvals.withdrawal_notice_days or '60' }}">
+        <label class="form-label" for="withdrawal_notice_days">إخطار السحب (أيام)</label>
+        <input id="withdrawal_notice_days" name="withdrawal_notice_days" class="form-control" required inputmode="numeric" value="{{ formvals.withdrawal_notice_days or '60' }}">
       </div>
       <div class="col-md-4">
-        <label class="form-label">بداية العقد (هجري)</label>
-        <input name="start_date_h" class="form-control" required value="{{ formvals.start_date_h or '' }}">
+        <label class="form-label" for="start_date_h">بداية العقد (هجري)</label>
+        <input id="start_date_h" name="start_date_h" class="form-control" required value="{{ formvals.start_date_h or '' }}">
       </div>
       <div class="col-md-4">
-        <label class="form-label">نهاية العقد (هجري)</label>
-        <input name="end_date_h" class="form-control" required value="{{ formvals.end_date_h or '' }}">
+        <label class="form-label" for="end_date_h">نهاية العقد (هجري)</label>
+        <input id="end_date_h" name="end_date_h" class="form-control" required value="{{ formvals.end_date_h or '' }}">
       </div>
-
-      <!-- عمولة التسويق (%) -->
       <div class="col-md-4">
-        <label class="form-label">عمولة التسويق</label>
+        <label class="form-label" for="commission_percent">عمولة التسويق</label>
         <div class="input-group">
-          <input name="commission_percent" class="form-control" required inputmode="decimal" step="0.01"
-                 value="{{ formvals.commission_percent or '2.5' }}">
-          <span class="input-group-text">%</span>
+          <input id="commission_percent" name="commission_percent" class="form-control" required inputmode="decimal" step="0.01" value="{{ formvals.commission_percent or '2.5' }}"><span class="input-group-text">%</span>
         </div>
       </div>
-
       <div class="col-md-4">
-        <label class="form-label">إخطار الانسحاب (أيام)</label>
-        <input name="exit_notice_days" class="form-control" required inputmode="numeric"
-               value="{{ formvals.exit_notice_days or '90' }}">
+        <label class="form-label" for="exit_notice_days">إخطار الانسحاب (أيام)</label>
+        <input id="exit_notice_days" name="exit_notice_days" class="form-control" required inputmode="numeric" value="{{ formvals.exit_notice_days or '90' }}">
       </div>
       <div class="col-md-4">
-        <label class="form-label">الاختصاص القضائي</label>
-        <input name="jurisdiction" class="form-control" required
-               value="{{ formvals.jurisdiction or 'المملكة العربية السعودية' }}">
+        <label class="form-label" for="jurisdiction">الاختصاص القضائي</label>
+        <input id="jurisdiction" name="jurisdiction" class="form-control" required value="{{ formvals.jurisdiction or 'المملكة العربية السعودية' }}">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label" for="penalty_amount">الشرط الجزائي (ريال)</label>
+        <input id="penalty_amount" name="penalty_amount" class="form-control" required inputmode="numeric" value="{{ formvals.penalty_amount or '3000' }}">
       </div>
     </div>
 
     <div class="btn-row">
-  <button class="btn btn-secondary" name="action" value="preview" type="submit">👁 معاينة</button>
-  <button class="btn btn-primary"   name="action" value="save"    type="submit">حفظ</button>
-  <button class="btn btn-outline-primary" name="action" value="save_back" type="submit">حفظ والرجوع</button>
-  <button class="btn btn-success"   name="action" value="save_pdf" type="submit">حفظ + PDF</button>
-  <a class="btn btn-light" href="{{ url_for('contracts_list') }}">إلغاء</a>
-</div>
-
+      <button class="btn btn-secondary" name="action" value="preview" type="submit">👁 معاينة</button>
+      <button class="btn btn-primary" name="action" value="save" type="submit">حفظ</button>
+      <button class="btn" name="action" value="save_back" type="submit">حفظ والرجوع</button>
+      <button class="btn btn-success" name="action" value="save_pdf" type="submit">حفظ + PDF</button>
+      <a class="btn btn-light" href="{{ url_for('contracts_list_view') }}">إلغاء</a>
+    </div>
   </form>
 
   {% if preview_content %}
-    <hr>
-    <h4>معاينة نص العقد</h4>
-    <pre style="white-space:pre-wrap;line-height:1.9">{{ preview_content }}</pre>
+    <hr><h4>معاينة نص العقد</h4>
   {% endif %}
 </div>
-
-<!-- تحسين مظهر الإضافات لو ما كان Bootstrap محمل -->
-<style>
-  .input-group{display:flex; align-items:stretch; width:100%}
-  .input-group>.form-control{flex:1 1 auto; width:1%;}
-  .input-group-text{
-    display:flex; align-items:center; padding:.375rem .6rem; border:1px solid #d1d5db;
-    background:#f3f4f6; border-inline-start:0; border-radius:.375rem;
-    color:#111827; font-weight:600
-  }
-  .input-group>.form-control:first-child{border-inline-end:0; border-top-left-radius:.375rem; border-bottom-left-radius:.375rem;}
-  [dir="rtl"] .input-group>.form-control:first-child{border-inline-start:0;border-inline-end:1px solid #d1d5db}
-  [dir="rtl"] .input-group-text{border-inline-start:1px solid #d1d5db;border-inline-end:0;border-top-right-radius:.375rem;border-bottom-right-radius:.375rem;border-top-left-radius:0;border-bottom-left-radius:0}
-</style>
 {% endblock %}

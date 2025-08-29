@@ -37,10 +37,10 @@ services:
         value: "--timeout 180 --graceful-timeout 30"
       - key: RENDER
         value: "1"
-    disk:
-      name: signatures
-      mountPath: /opt/render/project/src/static/uploads/signatures
-      sizeGB: 1
+    disks:
+      - name: signatures
+        mountPath: /opt/render/project/src/static/uploads/signatures
+        sizeGB: 1
 
 databases:
   - name: contractsama-postgres

@@ -1,78 +1,181 @@
-{% extends "base.html" %} 
-{% block title %}تفاصيل العقد{% endblock %}
+{% extends "base.html" %}
+{% block title %}عقد جديد{% endblock %}
+
+{% block extra_head %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/contracts.css') }}">
+{% endblock %}
+
 {% block content %}
-<div class="container">
-  <div class="d-flex align-items-center justify-content-between mb-3">
-    <h3>عقد #{{ item.id }}</h3>
-    <div class="d-flex gap-2">
-      <a class="btn btn-success" href="{{ url_for('contracts_pdf', cid=item.id) }}">فتح PDF</a>
-      <a class="btn btn-outline-primary" href="{{ url_for('contracts_edit', cid=item.id) }}">تعديل</a>
-      <form method="POST" action="{{ url_for('contracts_delete', cid=item.id) }}" onsubmit="return confirm('حذف العقد؟')" class="d-inline">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button class="btn btn-outline-danger">حذف</button>
-      </form>
-    </div>
+<div class="card p-3">
+  <div class="d-flex align-items-center justify-content-between mb-2">
+    <h3 class="m-0">إنشاء عقد جديد</h3>
+    <div class="alert alert-info m-0">رقم العقد سيتولّد تلقائيًا: <strong>{{ generated_no }}</strong></div>
   </div>
 
-  {% if current_user.is_authenticated and current_user.role == 'manager' and (item.status == 'pending') %}
-    <div class="alert alert-warning d-flex align-items-center justify-content-between">
-      <div>هذا العقد بانتظار اعتماد المدير.</div>
-      <div class="d-flex gap-2">
-        <form method="post" action="{{ url_for('manager_approve_contract', cid=item.id) }}" class="d-inline">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <input type="text" name="note" class="form-control d-inline-block" style="width: 200px" placeholder="ملاحظة (اختياري)">
-          <button class="btn btn-success btn-sm">اعتماد</button>
-        </form>
-        <form method="post" action="{{ url_for('manager_reject_contract', cid=item.id) }}" class="d-inline">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <input type="text" name="note" class="form-control d-inline-block" style="width: 200px" placeholder="سبب الرفض">
-          <button class="btn btn-outline-danger btn-sm">رفض</button>
-        </form>
+  <form method="POST">
+    <input type="hidden" id="csrf_token" name="csrf_token" value="{{ csrf_token() }}">
+
+    <!-- معلومات الاجتماع -->
+    <div class="row">
+      <div class="col-md-12">
+        <h4 class="mb-2 text-brand">معلومات الاجتماع</h4>
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label" for="meeting_day_name">اسم اليوم</label>
+        <input id="meeting_day_name" name="meeting_day_name" class="form-control" required
+               value="{{ formvals.meeting_day_name or '' }}">
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label" for="meeting_date_h">تاريخ الاجتماع (هجري)</label>
+        <input id="meeting_date_h" name="meeting_date_h" class="form-control" required
+               value="{{ formvals.meeting_date_h or '' }}">
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label" for="city">المدينة</label>
+        <input id="city" name="city" class="form-control" required
+               value="{{ formvals.city or 'جدة' }}">
       </div>
     </div>
-  {% endif %}
 
-  <div class="card p-3">
-    <div class="mb-2">
-      <strong>الرقم:</strong>
-      <span class="badge bg-info">{{ item.client_contract_no or item.internal_serial }}</span>
+    <!-- بيانات الطرف الثاني -->
+    <div class="row mt-3">
+      <div class="col-md-12">
+        <h4 class="mb-2 text-brand">بيانات الطرف الثاني</h4>
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label" for="partner2_name">الاسم</label>
+        <input id="partner2_name" name="partner2_name" class="form-control" required
+               value="{{ formvals.partner2_name or '' }}">
+      </div>
+
+      <div class="col-md-3">
+        <label class="form-label" for="sign2_id">الهوية/السجل</label>
+        <input id="sign2_id" name="sign2_id" class="form-control" required inputmode="numeric"
+               placeholder="10-15 رقم" value="{{ formvals.sign2_id or '' }}">
+      </div>
+
+      <div class="col-md-3">
+        <label class="form-label" for="sign2_phone">الجوال</label>
+        <input id="sign2_phone" name="sign2_phone" class="form-control" required inputmode="numeric"
+               placeholder="05XXXXXXXX" value="{{ formvals.sign2_phone or '' }}">
+      </div>
+
+      <div class="col-md-12">
+        <label class="form-label" for="client_address">العنوان</label>
+        <input id="client_address" name="client_address" class="form-control" required
+               value="{{ formvals.client_address or '' }}">
+      </div>
+
+      <!-- مبلغ المشاركة (﷼) -->
+      <div class="col-md-6">
+        <label class="form-label" for="investment_amount">مبلغ المشاركة</label>
+        <div class="input-group">
+          <input id="investment_amount" name="investment_amount" class="form-control" required
+                 inputmode="decimal" step="0.01" value="{{ formvals.investment_amount or '' }}">
+          <img src="{{ url_for('static', filename='img/Saudi_Riyal_Symbol.svg.png') }}"
+               alt="SAR" class="riyal-icon">
+        </div>
+      </div>
     </div>
-    <div><strong>الحالة:</strong>
-      {% if item.status=='pending' %} بانتظار الاعتماد
-      {% elif item.status=='approved' %} معتمدة
-      {% else %} مرفوضة{% endif %}
+
+    <!-- تفاصيل مالية -->
+    <div class="row mt-3">
+      <div class="col-md-12">
+        <h4 class="mb-2 text-brand">تفاصيل مالية</h4>
+      </div>
+
+      <!-- رأس المال (﷼) -->
+      <div class="col-md-4">
+        <label class="form-label" for="capital_amount">رأس المال (يُذكر في العقد)</label>
+        <div class="input-group">
+          <input id="capital_amount" name="capital_amount" class="form-control" required
+                 inputmode="decimal" step="0.01" value="{{ formvals.capital_amount or '' }}">
+          <img src="{{ url_for('static', filename='img/Saudi_Riyal_Symbol.svg.png') }}"
+               alt="SAR" class="riyal-icon">
+        </div>
+      </div>
+
+      <!-- نسبة الربح (%) -->
+      <div class="col-md-4">
+        <label class="form-label" for="profit_percent">نسبة ربح الطرف الثاني</label>
+        <div class="input-group">
+          <input id="profit_percent" name="profit_percent" class="form-control" required
+                 inputmode="decimal" step="0.01" value="{{ formvals.profit_percent or '30' }}">
+          <span class="input-group-text">%</span>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label" for="profit_interval_months">دورية أرباح (أشهر)</label>
+        <input id="profit_interval_months" name="profit_interval_months" class="form-control" required
+               inputmode="numeric" value="{{ formvals.profit_interval_months or '6' }}">
+      </div>
     </div>
-    {% if item.manager_note %}
-      <div><strong>ملاحظة المدير:</strong> {{ item.manager_note }}</div>
-    {% endif %}
-    <div><strong>العميل:</strong> {{ item.client_name or '-' }}</div>
-    <div><strong>هوية/سجل:</strong> {{ item.client_id_number or '-' }}</div>
-    <div><strong>جوال:</strong> {{ item.client_phone or '-' }}</div>
-    <div><strong>عنوان:</strong> {{ item.client_address or '-' }}</div>
 
-    <div>
-  <strong>مبلغ المشاركة:</strong>
-  {% if item.investment_amount %}
-    <span>{{ "{:,.2f}".format(item.investment_amount) }}</span>
-    <img src="{{ url_for('static', filename='img/Saudi_Riyal_Symbol.svg.png') }}" 
-         alt="SAR" style="height:18px;vertical-align:middle;margin-right:4px;">
-  {% else %}
-    -
-  {% endif %}
-</div>
+    <!-- مواعيد -->
+    <div class="row mt-3">
+      <div class="col-md-12">
+        <h4 class="mb-2 text-brand">مواعيد</h4>
+      </div>
 
+      <div class="col-md-4">
+        <label class="form-label" for="withdrawal_notice_days">إخطار السحب (أيام)</label>
+        <input id="withdrawal_notice_days" name="withdrawal_notice_days" class="form-control" required
+               inputmode="numeric" value="{{ formvals.withdrawal_notice_days or '60' }}">
+      </div>
 
+      <div class="col-md-4">
+        <label class="form-label" for="start_date_h">بداية العقد (هجري)</label>
+        <input id="start_date_h" name="start_date_h" class="form-control" required
+               value="{{ formvals.start_date_h or '' }}">
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label" for="end_date_h">نهاية العقد (هجري)</label>
+        <input id="end_date_h" name="end_date_h" class="form-control" required
+               value="{{ formvals.end_date_h or '' }}">
+      </div>
+
+      <!-- عمولة التسويق (%) -->
+      <div class="col-md-4">
+        <label class="form-label" for="commission_percent">عمولة التسويق</label>
+        <div class="input-group">
+          <input id="commission_percent" name="commission_percent" class="form-control" required
+                 inputmode="decimal" step="0.01" value="{{ formvals.commission_percent or '2.5' }}">
+          <span class="input-group-text">%</span>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label" for="exit_notice_days">إخطار الانسحاب (أيام)</label>
+        <input id="exit_notice_days" name="exit_notice_days" class="form-control" required
+               inputmode="numeric" value="{{ formvals.exit_notice_days or '90' }}">
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label" for="jurisdiction">الاختصاص القضائي</label>
+        <input id="jurisdiction" name="jurisdiction" class="form-control" required
+               value="{{ formvals.jurisdiction or 'المملكة العربية السعودية' }}">
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-secondary" name="action" value="preview" type="submit">👁 معاينة</button>
+      <button class="btn btn-primary"   name="action" value="save"    type="submit">حفظ</button>
+      <button class="btn btn-outline-primary" name="action" value="save_back" type="submit">حفظ والرجوع</button>
+      <button class="btn btn-success"   name="action" value="save_pdf" type="submit">حفظ + PDF</button>
+      <a class="btn btn-light" href="{{ url_for('contracts_list') }}">إلغاء</a>
+    </div>
+  </form>
+
+  {% if preview_content %}
     <hr>
-    <h5>العنوان</h5>
-    <p>{{ item.title }}</p>
-    <h5>نص العقد</h5>
-    <pre style="white-space:pre-wrap">{{ item.content }}</pre>
-
-    {% if item.signature_path %}
-      <hr>
-      <h6>التوقيع</h6>
-      <img src="{{ url_for('static', filename=item.signature_path.split('static/')[1] if 'static/' in item.signature_path else item.signature_path) }}" alt="signature" style="max-width:260px">
-    {% endif %}
-  </div>
+    <h4>معاينة نص العقد</h4>
+    <pre class="pre-wrap">{{ preview_content }}</pre>
+  {% endif %}
 </div>
 {% endblock %}

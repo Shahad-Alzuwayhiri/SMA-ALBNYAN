@@ -1,55 +1,59 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}ContractSama{% endblock %}</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-  {% block extra_head %}{% endblock %}
+    <meta charset="utf-8">
+    <title>{{ BRAND.name if BRAND and BRAND.name else '' }}{% block title %}{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/contracts.css') }}">
+    <style>
+        body { font-family: 'Tahoma', 'Amiri', sans-serif; background: #f8fafc; color: #1F3C88; }
+        .navbar { background: #1F3C88; color: #fff; padding: 12px 0; }
+        .navbar img { height: 38px; vertical-align: middle; margin-left: 12px; }
+        .navbar .brand { font-size: 1.3em; font-weight: bold; }
+        .navbar .nav-links { float: right; }
+        .navbar .nav-links a { color: #fff; margin: 0 10px; text-decoration: none; }
+        .notif-badge { background: #22B8CF; color: #fff; border-radius: 50%; padding: 2px 8px; font-size: 0.9em; margin-right: 6px; }
+        .container { max-width: 1100px; margin: 30px auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px #e5e7eb; padding: 32px; }
+        footer { text-align: center; color: #888; margin: 30px 0 0 0; font-size: 0.95em; }
+    </style>
+    {% block head %}{% endblock %}
 </head>
-<body class="layout">
-  <header class="topbar">
-  <div class="brand">
-    <img src="{{ url_for('static', filename='img/logo.png') }}" alt="logo" class="logo" />
-    <span class="brand-name">{{ BRAND.name }}</span>
-  </div>
-
-  {% if current_user.is_authenticated %}
-  <nav class="nav">
-    <a class="nav-link {% if request.endpoint=='dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}">اللوحة</a>
-    <a class="nav-link {% if request.endpoint in ['contracts_list','contracts_create','contracts_detail','contracts_edit'] %}active{% endif %}" href="{{ url_for('contracts_list') }}">العقود</a>
-    {% if current_user.role == 'manager' %}
-      <a class="nav-link {% if request.endpoint=='manager_dashboard' %}active{% endif %}" href="{{ url_for('manager_dashboard') }}">لوحة المدير</a>
-    {% endif %}
-    <a class="nav-link" href="{{ url_for('admin_backup') }}">نسخة احتياطية</a>
-    <a class="nav-link" href="{{ url_for('admin_restore') }}">استعادة</a>
-    <a class="btn btn-logout" href="{{ url_for('logout') }}">تسجيل الخروج</a>
-  </nav>
-  {% endif %}
-</header>
-
-  </header>
-
-  <main class="container">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        <div class="flash-stack">
-          {% for cat, msg in messages %}
-            <div class="alert alert-{{ cat }}">{{ msg }}</div>
-          {% endfor %}
-        </div>
-      {% endif %}
-    {% endwith %}
-
-    {% if back_url %}
-      <div class="mb-2">
-        <a class="btn btn-light border" href="{{ back_url }}">⬅ رجوع</a>
-      </div>
-    {% endif %}
-
-    {% block content %}{% endblock %}
-  </main>
-
-  <footer class="footer">© 2025 ContractSama</footer>
+<body>
+    <div class="navbar">
+        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="شعار سما" />
+        <span class="brand">{{ BRAND.name if BRAND and BRAND.name else '' }}</span>
+        <span class="nav-links">
+            <a href="{{ url_for('dashboard') }}">لوحة التحكم</a>
+            <a href="{{ url_for('contracts_list') }}">العقود</a>
+            <a href="{{ url_for('notifications') }}">
+                الإشعارات
+                {% if current_user.is_authenticated and unread_count is defined and unread_count %}
+                    <span class="notif-badge">{{ unread_count }}</span>
+                {% endif %}
+            </a>
+            {% if current_user.is_authenticated and current_user.role is defined and current_user.role == 'manager' %}
+                <a href="{{ url_for('manager_dashboard') }}">لوحة المدير</a>
+            {% endif %}
+            <a href="{{ url_for('logout') }}">خروج</a>
+        </span>
+    </div>
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <ul class="flashes">
+                {% for category, msg in messages %}
+                    <li class="alert alert-{{ category }}">{{ msg }}</li>
+                {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+    </div>
+    <footer>
+        جميع الحقوق محفوظة &copy; {{ BRAND.name if BRAND and BRAND.name else '' }} 2025
+    </footer>
+    {% block scripts %}{% endblock %}
 </body>
 </html>

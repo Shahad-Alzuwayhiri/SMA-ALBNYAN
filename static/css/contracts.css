@@ -1,0 +1,53 @@
+/* ...existing code... */
+.contracts-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 24px;
+    background: #fff;
+}
+.contracts-table th, .contracts-table td {
+    border: 1px solid #e5e7eb;
+    padding: 10px 8px;
+    text-align: center;
+}
+.contracts-table th {
+    background: #1F3C88;
+    color: #fff;
+    font-weight: bold;
+}
+.stat-card {
+    background: #f1f6fa;
+    border: 1px solid #22B8CF;
+    border-radius: 8px;
+    padding: 18px 24px;
+    min-width: 160px;
+    text-align: center;
+}
+.stat-title {
+    color: #1F3C88;
+    font-size: 1em;
+    margin-bottom: 8px;
+}
+.stat-value {
+    color: #22B8CF;
+    font-size: 2em;
+    font-weight: bold;
+}
+.notifications-list {
+    list-style: none;
+    padding: 0;
+}
+.notifications-list li {
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    padding: 14px 18px;
+}
+.notifications-list li.unread {
+    background: #e3f7fa;
+    border-color: #22B8CF;
+}
+.notif-title { font-weight: bold; color: #1F3C88; }
+.notif-body { margin: 6px 0; }
+.notif-date { color: #888; font-size: 0.95em; }

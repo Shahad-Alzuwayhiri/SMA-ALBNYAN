@@ -16,7 +16,7 @@ from reportlab.pdfgen import canvas
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import (
-    SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Flowable, KeepTogether
+    SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, KeepTogether
 )
 from reportlab.pdfbase.pdfmetrics import registerFontFamily
 
@@ -56,10 +56,9 @@ def _shape_ar(s: str) -> str:
     except Exception:
         return s
 
-# Use strong RTL wrapper per line to avoid first/last word flipping
-RLE = "\\u202B"  # Right-to-Left Embedding
-PDF = "\\u202C"  # Pop Directional Formatting
-RLM = "\\u200F"  # Right-to-Left Mark
+RLE = "\u202B"   # Right-to-Left Embedding (actual char)
+PDF = "\u202C"   # Pop Directional Formatting (actual char)
+RLM = "\u200F"   # Right-to-Left Mark (actual char)
 
 def _prepare_rtl_html(raw: str) -> str:
     """Preserve <br/> and wrap each visual line with RTL embedding; then shape Arabic."""
@@ -146,7 +145,7 @@ def _draw_header_footer(canv: canvas.Canvas, doc, brand: dict, logo_path: Option
     )
     p = Paragraph(_shape_ar(brand_name), hdr_style)
     usable_w = w - (x_margin + 25*mm) - x_margin
-    aw, ah = p.wrap(usable_w, bar_h)
+    _, ah = p.wrap(usable_w, bar_h)
     p.drawOn(canv, x_margin + 25*mm, h - ah - 8)
 
     canv.setFillColor(acc)
@@ -161,12 +160,13 @@ def _draw_header_footer(canv: canvas.Canvas, doc, brand: dict, logo_path: Option
         textColor=colors.white,
     )
     fp = Paragraph(_shape_ar(f"صفحة {doc.page}"), ftr_style)
-    fw, fh = fp.wrap(w, 10)
+    _, _ = fp.wrap(w, 10)
     fp.drawOn(canv, x_margin, 2)
 
     canv.restoreState()
 
-# ===== Main builder =====
+# ...existing imports and code...
+
 def generate_contract_pdf(
     *,
     title: str,
@@ -221,7 +221,6 @@ def generate_contract_pdf(
         textColor=colors.HexColor((brand or {}).get("primary", "#1F3C88")), spaceAfter=6
     )
 
-    # Margins
     right_margin = 18 * mm; left_margin = 18 * mm
     top_margin = 22 * mm; bottom_margin = 15 * mm
 
@@ -235,20 +234,22 @@ def generate_contract_pdf(
 
     # Helpers that close over styles
     def _para_from_raw(raw: str) -> Paragraph:
-        safe = _html_escape(raw or "")
-        safe = (safe.replace("\\r\\n", "\\n").replace("\\r", "\\n").replace("\\t", "    "))
-        safe = safe.replace("\\n", "<br/>")
-        shaped_html = _prepare_rtl_html(safe)
-        return Paragraph(shaped_html, style_body)
+        try:
+            safe = _html_escape(raw or "")
+            safe = safe.replace("\r\n","\n").replace("\r","\n").replace("\t","    ")
+            safe = safe.replace("\n","<br/>")
+            shaped_html = _prepare_rtl_html(safe)
+            return Paragraph(shaped_html, style_body)
+        except Exception:
+            fallback = _shape_ar((raw or "").replace("\r","").replace("\t","    "))
+            return Paragraph(_html_escape(fallback).replace("\n","<br/>"), style_body)
 
-    # Build story
     story = []
     story.append(Paragraph(_shape_ar("بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيمِ"), style_basmala))
     story.append(Spacer(1, 4))
     story.append(Paragraph(_shape_ar(title or "عقد"), style_title))
     story.append(Spacer(1, 6))
 
-    # Meta table
     date_display = created_at
     try:
         date_display = datetime.fromisoformat(created_at.replace("Z", "")).strftime("%Y-%m-%d %H:%M")
@@ -284,21 +285,18 @@ def generate_contract_pdf(
     story.append(meta_tbl)
     story.append(Spacer(1, 10))
 
-    # Contract body
     story.append(Paragraph(_shape_ar("نص العقد:"), style_section))
     story.append(Spacer(1, 6))
 
-    # Split content into lines and keep the original order strictly
-    lines = (content or "").split("\\n")
+    lines = (content or "").split("\n")
     buf = []
     def _flush_buf():
         if buf:
-            story.append(_para_from_raw("\\n".join(buf)))
+            story.append(_para_from_raw("\n".join(buf)))
             story.append(Spacer(1, 6))
             buf.clear()
 
-    # Headings regex
-    _rx_heading = re.compile(r"^\\s*(تمهيد|البند\\s+.+?)\\s*[:：]?\\s*$")
+    _rx_heading = re.compile(r"^\s*(تمهيد|البند\s+.+?)\s*[:：]?\s*$")
 
     i = 0
     while i < len(lines):
@@ -307,46 +305,40 @@ def generate_contract_pdf(
 
         if _rx_heading.match(stripped):
             _flush_buf()
-            # Heading line as-is
             story.append(Paragraph(_shape_ar(stripped), style_section))
-            # If it's "تمهيد" draw a light underline
             if stripped == "تمهيد":
                 story.append(Table([[""]], colWidths=[170*mm], style=TableStyle([
                     ("LINEBELOW",(0,0),(-1,-1),0.6,colors.HexColor("#cbd5e1")),
                     ("TOPPADDING",(0,0),(-1,-1),2),
                     ("BOTTOMPADDING",(0,0),(-1,-1),6),
                 ])))
-            # Collect following lines until blank or next heading
             i += 1
             para_lines = []
             while i < len(lines):
                 nxt = lines[i]
                 nxts = nxt.strip()
-                if not nxts:  # empty line ends paragraph
+                if not nxts:
                     break
                 if _rx_heading.match(nxts):
                     break
                 para_lines.append(nxt)
                 i += 1
             if para_lines:
-                story.append(KeepTogether([_para_from_raw("\\n".join(para_lines)), Spacer(1,6)]))
+                story.append(KeepTogether([_para_from_raw("\n".join(para_lines)), Spacer(1,6)]))
             else:
                 story.append(Spacer(1,6))
             continue
 
-        # blank line -> paragraph boundary
         if not stripped:
             _flush_buf()
             i += 1
             continue
 
-        # normal line
         buf.append(ln)
         i += 1
 
     _flush_buf()
 
-    # Signatures (visual)
     sign_tbl = Table([
         [Paragraph(_shape_ar("توقيع الطرف الأول (شركة سما البنيان التجارية)"), style_small),
          Paragraph(_shape_ar("توقيع الطرف الثاني"), style_small)],
@@ -361,7 +353,6 @@ def generate_contract_pdf(
     ]))
     story.append(sign_tbl)
 
-    # Footer line (no watermark)
     if prepared_by:
         story.append(Spacer(1, 8))
         story.append(Paragraph(_shape_ar(f"أُعدّ بواسطة: {prepared_by}"), style_small))
@@ -371,170 +362,3 @@ def generate_contract_pdf(
 
     doc.build(story, onFirstPage=_on_page, onLaterPages=_on_page)
     return buff.getvalue()
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line
-# keep-line

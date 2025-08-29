@@ -5,7 +5,7 @@ from io import BytesIO
 from functools import wraps
 from jinja2 import Template
 from werkzeug.utils import secure_filename
-from flask import Flask, render_template, request, redirect, url_for, flash, send_file, abort
+from flask import Flask, render_template, request, redirect, url_for, flash, send_file, abort, session
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_wtf import CSRFProtect
 from flask_mail import Mail, Message
@@ -13,26 +13,28 @@ from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from flask_wtf.csrf import generate_csrf  # اختياري إن احتجته في الفورم
+from flask_wtf.csrf import generate_csrf  # لإتاحة csrf_token() داخل القوالب
 import models
 from models import init_db, get_session, User, Contract
 from pdf_utils import generate_contract_pdf
-from flask import session, request, redirect, url_for
-MANAGER_INVITE_CODE = os.getenv("MANAGER_INVITE_CODE", "").strip()
 
-# ---------------- إعداد .env ----------------
+# ---------------- تحميل .env أولاً ----------------
 load_dotenv()
+
+# إعدادات عامّة من البيئة
 DEV_SHOW_LINK = os.getenv("DEV_SHOW_LINK", "False") == "True"
+MANAGER_INVITE_CODE = os.getenv("MANAGER_INVITE_CODE", "").strip()
 
 # ---------------- تطبيق Flask ----------------
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "CHANGE_ME_SECRET")
 
-# ---------------- قاعدة البيانات ----------------
-DATABASE_URL = (os.getenv("DATABASE_URL") or "").strip()
-if not DATABASE_URL:
-    DATABASE_URL = "sqlite:///users.db"
+# إتاحة csrf_token() داخل كل القوالب حتى بدون WTForms
+csrf = CSRFProtect(app)
+app.jinja_env.globals["csrf_token"] = generate_csrf
 
+# ---------------- قاعدة البيانات ----------------
+DATABASE_URL = (os.getenv("DATABASE_URL") or "").strip() or "sqlite:///users.db"
 engine = create_engine(DATABASE_URL, echo=False, future=True)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
@@ -42,8 +44,8 @@ app.config.update(
     MAIL_PORT=int(os.environ.get("MAIL_PORT", "587")),
     MAIL_USE_TLS=os.environ.get("MAIL_USE_TLS", "True") == "True",
     MAIL_USERNAME=os.environ.get("MAIL_USERNAME"),
-    MAIL_PASSWORD=os.environ.get("MAIL_PASSWORD"),
-    MAIL_DEFAULT_SENDER=os.environ.get("MAIL_DEFAULT_SENDER") or os.environ.get("MAIL_USERNAME")
+    MAIL_PASSWORD=os.environ.get("MAIL_PASSWORD"),  # تم حذف التكرار المزدوج الذي لا فائدة منه
+    MAIL_DEFAULT_SENDER=os.environ.get("MAIL_DEFAULT_SENDER") or os.environ.get("MAIL_USERNAME"),
 )
 mail = Mail(app)
 
@@ -54,10 +56,6 @@ os.makedirs(os.path.join(app.root_path, UPLOAD_REL), exist_ok=True)
 # ---------------- هوية العلامة ----------------
 BRAND = {"name": "شركة سما البنيان التجارية", "primary": "#1F3C88", "accent": "#22B8CF"}
 CONTRACT_PREFIX = os.environ.get("CONTRACT_PREFIX", "B123-1447")
-
-# ---------------- CSRF & Serializer ----------------
-csrf = CSRFProtect(app)
-serializer = URLSafeTimedSerializer(app.config["SECRET_KEY"])
 
 # ---------------- تسجيل الدخول ----------------
 login_manager = LoginManager(app)
@@ -76,6 +74,7 @@ def load_user(user_id):
     return Current(u) if u else None
 
 def role_required(role_name):
+    """ديكوريتر يمنع الوصول إلا لدور معيّن."""
     def _decorator(fn):
         @wraps(fn)
         def _wrapped(*args, **kwargs):
@@ -86,20 +85,17 @@ def role_required(role_name):
             return fn(*args, **kwargs)
         return _wrapped
     return _decorator
-    # لا تسمح بالدخول لأي صفحة بدون تسجيل (ما عدا صفحات السماح)
+
+# لا تسمح بالدخول لأي صفحة بدون تسجيل (ما عدا صفحات السماح)
 OPEN_ENDPOINTS = {
     "login", "signup", "forgot_password", "reset_password", "static"
 }
 
 @app.before_request
 def _force_auth_everywhere():
-    # اسم الـ endpoint الحالي
     ep = request.endpoint or ""
-    # اسم endpoint للملفات الثابتة = 'static'
     base_ep = ep.split(".")[0]
-
     if base_ep not in OPEN_ENDPOINTS and not getattr(current_user, "is_authenticated", False):
-        # رجّع المستخدم لصفحة الدخول مع next=
         return redirect(url_for("login", next=request.path))
 
 # ---------------- مساعدة لحفظ توقيع اللوحة (Base64) ----------------
@@ -174,7 +170,7 @@ def forgot_password():
         if not u:
             flash("لم نجد بريدًا بهذا العنوان.", "danger")
             return render_template("forgot_password.html", BRAND=BRAND)
-        token = serializer.dumps(email, salt="reset-password")
+        token = URLSafeTimedSerializer(app.config["SECRET_KEY"]).dumps(email, salt="reset-password")
         reset_url = url_for("reset_password", token=token, _external=True)
         try:
             if app.config.get("MAIL_SERVER") and app.config.get("MAIL_USERNAME"):
@@ -199,8 +195,9 @@ def forgot_password():
 
 @app.route("/reset/<token>", methods=["GET","POST"])
 def reset_password(token):
+    s = URLSafeTimedSerializer(app.config["SECRET_KEY"])
     try:
-        email = serializer.loads(token, salt="reset-password", max_age=1800)
+        email = s.loads(token, salt="reset-password", max_age=1800)
     except SignatureExpired:
         flash("انتهت صلاحية الرابط. أعد المحاولة.", "danger")
         return redirect(url_for("forgot_password"))
@@ -229,12 +226,11 @@ def reset_password(token):
 @login_required
 def logout():
     logout_user()
-    session.clear()  # مهم
+    session.clear()
     flash("تم تسجيل الخروج.", "info")
     return redirect(url_for("login"))
 
-
-# ---------------- صفحات التطبيق ----------------
+# ---------------- لوحة الموظف ----------------
 @app.route("/dashboard")
 @login_required
 def dashboard():
@@ -242,6 +238,7 @@ def dashboard():
         return redirect(url_for("manager_dashboard"))
     return render_template("dashboard.html", BRAND=BRAND)
 
+# ---------------- العقود: قائمة/إنشاء/عرض/تعديل/حذف ----------------
 @app.route("/contracts")
 @login_required
 def contracts_list():
@@ -253,14 +250,14 @@ def contracts_list():
 @login_required
 def contracts_create():
     # رقم متوقع للعرض فقط (قد يتغير عند الحفظ)
-    session = get_session()
+    db_session = get_session()
     try:
         from models import ContractNumberCounter
-        cnt = session.query(ContractNumberCounter).filter_by(prefix=CONTRACT_PREFIX).first()
+        cnt = db_session.query(ContractNumberCounter).filter_by(prefix=CONTRACT_PREFIX).first()
         next_expected = (cnt.last_no + 1) if cnt else 1
         tentative_no = f"{CONTRACT_PREFIX}-{next_expected:04d}"
     finally:
-        session.close()
+        db_session.close()
 
     if request.method == "GET":
         return render_template("contracts_create.html", BRAND=BRAND,
@@ -286,6 +283,7 @@ def contracts_create():
         "commission_percent": f.get("commission_percent","").strip(),
         "exit_notice_days":   f.get("exit_notice_days","").strip(),
         "jurisdiction":       f.get("jurisdiction","").strip(),
+        # "jurisdiction":       f.get("jurisdiction","").strip(),  # مكرر بلا فائدة — تُرك معلقًا للتوضيح
         "penalty_amount":     (f.get("penalty_amount","").strip() or "3000"),
     }
     action = f.get("action","save")
@@ -324,8 +322,6 @@ def contracts_create():
                                formvals=vals, preview_content=content_preview,
                                generated_no=tentative_no)
 
-    # (التوقيع مُلغى حالياً حسب طلبك) — لن نتحقق من التوقيع
-
     # تحويل مبلغ الاستثمار إلى رقم إن أمكن
     try:
         inv_amt = float(vals["investment_amount"])
@@ -336,9 +332,10 @@ def contracts_create():
 
     # نحفظ مبدئيًا للحصول على الرقم الحقيقي ثم نعيد تعبئة القالب به
     new_id, internal_serial, real_no = models.create_contract(
+        
         user_id=int(current_user.id),
         title=title,
-        content_final="",  # مبدئيًا
+        content_final="",  # مؤقتًا
         prefix=CONTRACT_PREFIX,
         client_name=vals["partner2_name"],
         client_id_number=vals["sign2_id"],
@@ -347,7 +344,9 @@ def contracts_create():
         investment_amount=inv_amt,
         signature_path=None,
         template_text="FIXED_v1",
+        
     )
+    
 
     # إعادة بناء السياق برقم العقد الحقيقي
     ctx_final = vals.copy()
@@ -387,6 +386,7 @@ def contracts_detail(cid: int):
         flash("العقد غير موجود.", "danger")
         return redirect(url_for("contracts_list"))
     return render_template("contracts_detail.html", item=c, BRAND=BRAND)
+
 
 @app.route("/contracts/<int:cid>/edit", methods=["GET","POST"])
 @login_required
@@ -431,15 +431,26 @@ def contracts_delete(cid: int):
 @login_required
 def contracts_pdf(cid: int):
     try:
+        # جلب العقد حسب الدور
         if getattr(current_user, "role", "user") == "manager":
-            c = models.get_contract_for_manager(cid)
+            # افتراضيًا نستخدم دالّة خاصة إن وُجدت
+            if hasattr(models, "get_contract_for_manager"):
+                c = models.get_contract_for_manager(cid)
+            else:
+                s = get_session()
+                try:
+                    c = s.get(Contract, cid)
+                finally:
+                    s.close()
         else:
             c = models.get_contract(cid, int(current_user.id))
+
         if not c:
             flash("العقد غير موجود.", "danger")
             return redirect(url_for("contracts_list"))
 
         logo_path = os.path.join(app.root_path, "static", "img", "logo.png")
+        # مرّر مسار الخط للـ PDF لضمان تشكيل عربي صحيح
         font_path = os.path.join(app.root_path, "static", "fonts", "Amiri-Regular.ttf")
         signature_abs = os.path.join(app.root_path, c.signature_path) if c.signature_path else None
 
@@ -450,7 +461,7 @@ def contracts_pdf(cid: int):
             created_at=str(c.created_at).split(".")[0],
             brand=BRAND,
             logo_path=logo_path,
-            font_path=font_path,
+            font_path=font_path,  # ← مهم
             client_name=c.client_name,
             client_id_number=c.client_id_number,
             client_phone=c.client_phone,
@@ -462,24 +473,44 @@ def contracts_pdf(cid: int):
         return send_file(BytesIO(pdf_bytes), mimetype="application/pdf",
                          as_attachment=False, download_name=f"contract_{c.id}.pdf")
     except Exception as e:
-        # يطبع في الكونسول ويظهر لك رسالة مفيدة
         import traceback; traceback.print_exc()
         flash(f"تعذر توليد الـ PDF: {e}", "danger")
         return redirect(url_for("contracts_detail", cid=cid))
+    
+# ---------------- الإشعارات ----------------
+@app.route("/notifications")
+@login_required
+def notifications():
+    items = models.list_notifications(int(current_user.id), unread_only=False, limit=100)
+    return render_template("notifications.html", BRAND=BRAND, items=items)
 
+@app.route("/notifications/read/<int:nid>", methods=["POST"])
+@login_required
+def notifications_read(nid: int):
+    ok = models.mark_notification_read(nid, int(current_user.id))
+    flash("تم التعليم كمقروء." if ok else "تعذّر التعديل.", "info" if ok else "danger")
+    return redirect(request.referrer or url_for("notifications"))
+
+@app.route("/notifications/read_all", methods=["POST"])
+@login_required
+def notifications_read_all():
+    ok = models.mark_all_notifications_read(int(current_user.id))
+    flash("تم تعليم كل الإشعارات كمقروءة." if ok else "تعذّر التعديل.", "info" if ok else "danger")
+    return redirect(request.referrer or url_for("notifications"))
 
 # ---------------- النسخ الاحتياطي/الاستعادة ----------------
 @app.route("/admin/backup")
 @login_required
+@role_required("manager")  # السماح للمدير فقط
 def admin_backup():
     """
     ZIP: data.json (users+contracts) + signatures/
     تنبيه: كلمات المرور محفوظة مُشفّرة (hash) — لا يمكن استعادتها كنص.
     """
-    session = get_session()
+    db_session = get_session()
     try:
-        users = session.query(User).all()
-        contracts = session.query(Contract).all()
+        users = db_session.query(User).all()
+        contracts = db_session.query(Contract).all()
         data = {
             "version": 1,
             "users": [
@@ -503,7 +534,7 @@ def admin_backup():
             ],
         }
     finally:
-        session.close()
+        db_session.close()
 
     mem = io.BytesIO()
     with zipfile.ZipFile(mem, mode="w", compression=zipfile.ZIP_DEFLATED) as z:
@@ -521,6 +552,7 @@ def admin_backup():
 
 @app.route("/admin/restore", methods=["GET","POST"])
 @login_required
+@role_required("manager")  # السماح للمدير فقط
 def admin_restore():
     if request.method == "POST":
         file = request.files.get("backup_zip")
@@ -545,11 +577,11 @@ def admin_restore():
                         shutil.copyfileobj(src, dst)
 
             # استعادة البيانات (حذف ثم إدراج)
-            session = get_session()
+            db_session = get_session()
             try:
-                session.query(Contract).delete()
-                session.query(User).delete()
-                session.commit()
+                db_session.query(Contract).delete()
+                db_session.query(User).delete()
+                db_session.commit()
 
                 # users
                 for u in data.get("users", []):
@@ -559,8 +591,8 @@ def admin_restore():
                         password_hash=u["password_hash"], stamp_path=u.get("stamp_path"),
                         role=u.get("role","user")
                     )
-                    session.add(nu)
-                session.commit()
+                    db_session.add(nu)
+                db_session.commit()
 
                 # contracts
                 for c in data.get("contracts", []):
@@ -576,14 +608,14 @@ def admin_restore():
                         status=c.get("status","pending"),
                         manager_note=c.get("manager_note"),
                     )
-                    session.add(nc)
-                session.commit()
+                    db_session.add(nc)
+                db_session.commit()
                 flash("تمت الاستعادة بنجاح.", "success")
             except Exception as e:
-                session.rollback()
+                db_session.rollback()
                 flash(f"فشل الاستعادة: {e}", "danger")
             finally:
-                session.close()
+                db_session.close()
 
         return redirect(url_for("dashboard"))
 
@@ -620,6 +652,17 @@ def manager_reject_contract(cid: int):
 # ---------- إنشاء الجداول أول مرة ----------
 with app.app_context():
     init_db()
+
+# ---------- معالجات أخطاء بسيطة ----------
+@app.errorhandler(403)
+def _403(_e):
+    flash("لا تملك صلاحية الوصول إلى هذه الصفحة.", "warning")
+    return redirect(url_for("dashboard"))
+
+@app.errorhandler(404)
+def _404(_e):
+    flash("الصفحة غير موجودة.", "warning")
+    return redirect(url_for("dashboard"))
 
 if __name__ == "__main__":
     app.run(debug=True)

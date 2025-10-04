@@ -12,9 +12,9 @@
       <label class="form-label">ملف النسخة الاحتياطية (ZIP)</label>
       <input type="file" name="backup_zip" class="form-control" accept=".zip" required>
     </div>
-    <div class="d-flex gap-2">
+    <div class="d-flex gap-2" style="justify-content:flex-end;">
       <button class="btn btn-primary">استعادة الآن</button>
-      <a href="{{ url_for('dashboard') }}" class="btn btn-light border">رجوع</a>
+      <a href="{{ url_for('dashboard') }}" class="btn-back" title="رجوع">&#8594;</a>
     </div>
   </form>
 </div>

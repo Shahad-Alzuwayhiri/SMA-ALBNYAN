@@ -1,90 +1,254 @@
 {% extends "base.html" %}
-{% block title %} | لوحة المدير{% endblock %}
+{% block title %}لوحة تحكم المدير{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard_custom.css') }}">
+{% endblock %}
 {% block content %}
-<h2 class="text-brand">لوحة تحكم المدير</h2>
-<div class="stats-row" style="display:flex;gap:24px;margin-bottom:32px;">
-    <div class="stat-card">
-        <div class="stat-title">عدد العقود الكلية</div>
-        <div class="stat-value">{{ stats.total_contracts }}</div>
+<div class="dashboard-layout">
+  <div class="dashboard-main">
+    <div class="modern-header" style="display:flex;justify-content:flex-end;align-items:center;">
+  {% from '_macros.html' import back_button %}{{ back_button(size='1.7em') }}
     </div>
-    <div class="stat-card">
-        <div class="stat-title">العقود الجديدة هذا الشهر</div>
-        <div class="stat-value">{{ stats.new_this_month }}</div>
+
+    <div class="dashboard-title">لوحة تحكم المدير</div>
+
+    <!-- quick status cards (دمج تصميم السما) -->
+    <div class="stats-row" style="max-width:1100px;margin:6px auto 14px;">
+      <div class="stat-card" style="background:linear-gradient(180deg,var(--purple-1),var(--purple-2));">
+        <div class="card-icon">📄</div>
+        <div class="stat-title">كل العقود</div>
+        <div class="stat-value">{{ metrics.total_count|default(0) }}</div>
+        <div class="stat-desc">جميع العقود</div>
+      </div>
+      <div class="stat-card" style="background:var(--sama-accent);">
+        <div class="card-icon">⏳</div>
+        <div class="stat-title">تحت الإجراء</div>
+        <div class="stat-value">{{ metrics.pending_count|default(0) }}</div>
+        <div class="stat-desc">بانتظار المعالجة</div>
+      </div>
+      <div class="stat-card" style="background:var(--accent-red);">
+        <div class="card-icon">❌</div>
+        <div class="stat-title">مغلقة</div>
+        <div class="stat-value">{{ metrics.closed_count|default(0) }}</div>
+        <div class="stat-desc">العقود المنتهية</div>
+      </div>
+      <div class="stat-card" style="background:var(--sama-gold);color:var(--primary-navy);">
+        <div class="card-icon">👥</div>
+        <div class="stat-title">الموظفين</div>
+        <div class="stat-value">{{ metrics.employees_count|default(metrics.users_count|default(0)) }}</div>
+        <div class="stat-desc">إجمالي الموظفين</div>
+      </div>
     </div>
-    <div class="stat-card">
-        <div class="stat-title">العقود المعلقة</div>
-        <div class="stat-value">{{ stats.pending_contracts }}</div>
+
+    <!-- مواصفات الميزات (مضمّنة وفعّالة عبر المتغيرات الممرّرة من السيرفر) -->
+    <details style="width:100%;max-width:1100px;margin:6px auto 18px;color:var(--primary-blue);">
+      <summary style="cursor:pointer;font-weight:700">📋 وصف ميزات لوحة المدير (انقر للعرض)</summary>
+      <pre style="white-space:pre-wrap;direction:rtl;text-align:right;color:var(--primary-blue);padding:12px;background:rgba(12,37,64,0.03);border-radius:8px;margin-top:8px;">
+1. إحصاءات رئيسية فورية
+2. الرسوم البيانية والتحليلات
+3. إدارة الملفات والتوقيعات
+4. التنبيهات والإشعارات
+5. قائمة المهام (To-Do List)
+6. آخر الأنشطة
+7. روابط وإجراءات سريعة
+8. متابعة الموظفين والفِرق
+9. الأرشيف والسجلات
+10. إضافات اختيارية: تقويم، ويدجت الطقس، لوحة إنجازات، مراسلة داخلية.
+      </pre>
+    </details>
+
+    <!-- إحصاءات سريعة -->
+    <div class="stats-row" aria-live="polite">
+      <div class="stat-card" style="background:var(--secondary-cyan);color:var(--primary-navy);">
+        <div class="card-icon">📄</div>
+        <div class="stat-title">كل العقود</div>
+        <div class="stat-value">{{ metrics.total_count|default(0) }}</div>
+        <div class="stat-desc">جميع العقود في النظام</div>
+      </div>
+      <div class="stat-card" style="background:var(--accent-gold);color:var(--primary-navy);">
+        <div class="card-icon">⏳</div>
+        <div class="stat-title">بانتظار الاعتماد</div>
+        <div class="stat-value">{{ metrics.pending_count|default(0) }}</div>
+        <div class="stat-desc">العقود الجديدة</div>
+      </div>
+      <div class="stat-card" style="background:var(--accent-red);color:#fff;">
+        <div class="card-icon">❌</div>
+        <div class="stat-title">المغلقة/المرفوضة</div>
+        <div class="stat-value">{{ metrics.closed_count|default(0) }}</div>
+        <div class="stat-desc">العقود المنتهية</div>
+      </div>
+      <!-- إضافية: موظفين وإيرادات إن وُفّرت -->
+      <div class="stat-card" style="background:var(--sama-accent, #22B8CF);color:#fff;">
+        <div class="card-icon">👥</div>
+        <div class="stat-title">الموظفين</div>
+        <div class="stat-value">{{ metrics.employees_count|default(metrics.users_count|default(0)) }}</div>
+        <div class="stat-desc">إجمالي الموظفين</div>
+      </div>
     </div>
-    <div class="stat-card">
-        <div class="stat-title">العقود المنتهية/المجددة</div>
-        <div class="stat-value">{{ stats.closed_contracts }}</div>
+
+    <!-- اللوحات المركزية -->
+  <div class="panels" style="max-width:1100px;margin:18px auto;display:grid;grid-template-columns:2fr 1fr 300px;gap:18px;">
+      <!-- اللوحة اليسرى: مخطط + ملخصات -->
+      <div style="display:flex;flex-direction:column;gap:18px;">
+        <div class="auth-card" style="padding:12px;">
+          <h4 style="margin:0 0 8px;text-align:right;color:var(--navy)">مخططات وتحليلات</h4>
+          <canvas id="chart_main" style="width:100%;height:260px" aria-label="مخطط أداء"></canvas>
+          <script id="chart-data" type="application/json">{{ chart_data|tojson|default('null') }}</script>
+        </div>
+
+        <div class="auth-card" style="padding:12px;">
+          <h4 style="margin:0 0 8px;text-align:right;color:var(--navy)">قائمة المهام</h4>
+          <ul style="margin:0;padding:0;list-style:none;direction:rtl">
+            {% if tasks %}
+              {% for t in tasks %}
+                <li style="padding:8px 6px;border-bottom:1px solid #f2f4f6;display:flex;justify-content:space-between;align-items:center">
+                  <div>{{ t.title }}</div>
+                  <div style="font-size:0.85rem;color:var(--muted)">— {{ t.assigned_by or t.owner or 'نظام' }}</div>
+                </li>
+              {% endfor %}
+            {% else %}
+              <li style="padding:8px 6px;border-bottom:1px solid #f2f4f6">لا توجد مهام حالياً</li>
+            {% endif %}
+          </ul>
+        </div>
+      </div>
+
+      <!-- اللوحة اليمنى: ملفات للمعاينة، إشعارات، أنشطة -->
+      <div style="display:flex;flex-direction:column;gap:18px;">
+        <div class="auth-card" style="padding:12px;">
+          <h4 style="margin:0 0 8px;text-align:right;color:var(--navy)">ملفات للمعاينة</h4>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            {% set files_shown = 0 %}
+            {% for act in recent_activities %}
+              {% if act.type in ['file','upload'] and files_shown < 6 %}
+                <div style="padding:6px;border-bottom:1px solid #f3f5f7">{{ act.title or act.name }}</div>
+                {% set files_shown = files_shown + 1 %}
+              {% endif %}
+            {% endfor %}
+            {% if files_shown == 0 %}
+              <div class="muted">لا توجد ملفات حديثة للمعاينة</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="auth-card" style="padding:12px;">
+          <h4 style="margin:0 0 8px;text-align:right;color:var(--navy)">التنبيهات</h4>
+          <div style="font-size:0.95rem;color:var(--muted);direction:rtl">
+            {% if notifications %}
+        <ul style="margin:0;padding:0;list-style:none">
+          {% set notifications_shown = (notifications or [])[:8] %}
+          {% for n in notifications_shown %}
+                  <li style="padding:8px 6px;border-bottom:1px dashed #f2f4f6;display:flex;justify-content:space-between;align-items:center">
+                    <div style="max-width:75%">{{ n.message or n.title }}</div>
+                    <div style="font-size:0.8rem;color:var(--primary-blue)">{{ n.human_time or n.created_at }}</div>
+                  </li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <div>لا توجد تنبيهات جديدة</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="auth-card" style="padding:12px;">
+          <h4 style="margin:0 0 8px;text-align:right;color:var(--navy)">آخر الأنشطة</h4>
+          <div style="font-size:0.95rem;color:var(--muted);direction:rtl">
+            {% if recent_activities %}
+              {% set recent_activities_shown = (recent_activities or [])[:10] %}
+              {% for a in recent_activities_shown %}
+                <div style="padding:8px 6px;border-bottom:1px dashed #f2f4f6">
+                  <div style="font-weight:700">{{ a.summary or a.title or (a.type ~ ' — ' ~ (a.actor or 'نظام')) }}</div>
+                  <div style="font-size:0.85rem;color:var(--muted)">{{ a.human_time or a.created_at }}</div>
+                </div>
+              {% endfor %}
+            {% else %}
+              <div>لا توجد أنشطة حديثة</div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+  {# Friends panel removed - unified layout #}
     </div>
-</div>
-<hr>
-<h3>قائمة العقود</h3>
-<form method="get" class="filter-row" style="margin-bottom:18px;">
-    <input type="text" name="q" placeholder="بحث بالاسم أو رقم العقد" value="{{ q }}">
-    <select name="status">
-        <option value="">كل الحالات</option>
-        <option value="pending" {% if status=='pending' %}selected{% endif %}>معلقة</option>
-        <option value="signed" {% if status=='signed' %}selected{% endif %}>موقعة</option>
-        <option value="closed" {% if status=='closed' %}selected{% endif %}>منتهية/مرفوضة</option>
-    </select>
-    <button type="submit" class="btn btn-primary">بحث</button>
-</form>
-<table class="contracts-table">
-    <thead>
-        <tr>
+
+    <!-- جدول العقود -->
+    <h3>كل العقود</h3>
+    <div style="overflow:auto">
+      <table class="contracts-table" role="table" aria-label="قائمة العقود">
+        <thead>
+          <tr>
             <th>رقم العقد</th>
             <th>الموظف</th>
             <th>العميل</th>
             <th>الحالة</th>
             <th>تاريخ الإنشاء</th>
             <th>إجراءات</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for c in items %}
-        <tr>
-            <td>{{ c.serial }}</td>
-            <td>{{ c.created_by_name }}</td>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in all_contracts %}
+          <tr>
+            <td style="white-space:nowrap">{{ c.serial }}</td>
+            <td>{{ c.employee_name }}</td>
             <td>{{ c.client_name }}</td>
-            <td>{{ c.status_display }}</td>
-            <td>{{ c.created_at|strftime('%Y-%m-%d') }}</td>
-            <td>
-                <a href="{{ url_for('contracts_detail', cid=c.id) }}" class="btn btn-sm btn-outline-primary">عرض</a>
-                {% if c.status == 'pending' %}
-                    <form method="post" action="{{ url_for('manager_approve_contract', cid=c.id) }}" style="display:inline;">
-                        <button type="submit" class="btn btn-sm btn-success">اعتماد</button>
-                    </form>
-                    <form method="post" action="{{ url_for('manager_reject_contract', cid=c.id) }}" style="display:inline;">
-                        <button type="submit" class="btn btn-sm btn-danger">رفض</button>
-                    </form>
-                {% endif %}
+            <td>{{ c.status_display | safe }}</td>
+            <td>{{ c.created_at.strftime('%Y-%m-%d') if c.created_at else '' }}</td>
+            <td style="white-space:nowrap">
+              <a href="{{ url_for('contracts_detail', cid=c.id) }}" class="btn btn-outline">عرض</a>
+              {% if c.status == 'pending' %}
+                <form method="post" action="{{ url_for('manager_approve_contract', cid=c.id) }}" style="display:inline">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button class="btn btn-success btn-sm" type="submit">اعتماد</button>
+                </form>
+                <form method="post" action="{{ url_for('manager_reject_contract', cid=c.id) }}" style="display:inline">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button class="btn btn-danger btn-sm" type="submit">رفض</button>
+                </form>
+              {% endif %}
             </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-<hr>
-<h3>نشاط الموظفين</h3>
-<table class="contracts-table">
-    <thead>
-        <tr>
-            <th>اسم الموظف</th>
-            <th>عدد العقود</th>
-            <th>آخر نشاط</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for emp in employees %}
-        <tr>
-            <td>{{ emp.name }}</td>
-            <td>{{ emp.contract_count }}</td>
-            <td>{{ emp.last_activity }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+          </tr>
+          {% endfor %}
+          {% if not all_contracts %}
+          <tr><td colspan="6" style="text-align:center;padding:18px;color:var(--muted)">لا توجد عقود لعرضها</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+// body class controlled centrally in base.html via auth_page
+
+(function(){
+  const dataTag = document.getElementById('chart-data');
+  let data = null;
+  if (dataTag) {
+    try {
+      data = JSON.parse(dataTag.textContent);
+    } catch (e) {
+      data = null;
+    }
+  }
+  const ctx = document.getElementById('chart_main');
+  if (!ctx) return;
+  if (typeof Chart !== 'undefined' && data) {
+    new Chart(ctx.getContext('2d'), data);
+  } else {
+    // رسم بديل بسيط (شريط رمزي) لعرض الشكل دون مكتبة
+    if (ctx.getContext) {
+      const c = ctx.getContext('2d');
+      c.fillStyle = '#f3f4f6';
+      c.fillRect(0,0,ctx.width,ctx.height);
+      c.fillStyle = '#cbd5e1';
+      c.fillRect(20, ctx.height - 60, 60, 40);
+      c.fillRect(100, ctx.height - 90, 60, 70);
+      c.fillRect(180, ctx.height - 40, 60, 20);
+      c.fillStyle = 'var(--muted)';
+      c.font = '13px sans-serif';
+      c.fillText('مخطط (Chart.js غير محمّل)', 10, 20);
+    }
+  }
+})();
+</script>
 {% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">{% endblock %}

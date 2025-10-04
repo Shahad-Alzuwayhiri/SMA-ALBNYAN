@@ -1,27 +1,48 @@
 {% extends "base.html" %}
 {% block title %}معاينة العقد{% endblock %}
+{% block extra_head %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/contracts_modern.css') }}">
+{% endblock %}
 {% block content %}
-<div class="container my-4">
-  <div class="card p-4">
+<div class="app-container content-with-sidebar">
+  <div class="container mx-auto px-4 max-w-screen-xl space-y-6 my-4">
+    <div class="modern-header">
+      {% from '_macros.html' import back_button %}{{ back_button() }}
+    </div>
+    <div class="card p-4">
     <h3 class="mb-3">معاينة العقد (نفس النص الذي سيُحفظ)</h3>
     <hr>
-    <pre style="white-space: pre-wrap; line-height:1.9; font-size:15px; direction: rtl; text-align:right;">{{ preview_text }}</pre>
-
+  <div style="
+  background: #fff;
+  border-radius: 16px;
+  padding: 32px;
+  margin: 0;
+  width: 100%;
+  box-sizing: border-box;
+  box-shadow: 0 2px 8px #6c63ff22;
+  white-space: pre-wrap;
+  line-height: 2;
+  font-size: 17px;
+  direction: rtl;
+  text-align: right;
+  overflow-x: auto;
+">
+  {{ preview_text }}
+</div>
     <form method="POST" action="{{ url_for('contracts_create') }}" class="mt-4">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-      <!-- نعيد تمرير البيانات حتى إذا اخترت حفظ من هنا -->
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       {% if form_data %}
         {% for k, v in form_data.items() %}
           <input type="hidden" name="{{ k }}" value="{{ v }}">
         {% endfor %}
       {% endif %}
       <input type="hidden" name="contract_template" value="{{ contract_template|e }}">
-
       <div class="d-flex gap-2">
         <button type="submit" name="action" value="back" class="btn btn-outline-secondary">رجوع للتعديل</button>
         <button type="submit" name="action" value="save" class="btn btn-primary">حفظ</button>
       </div>
     </form>
+    </div>
   </div>
 </div>
 {% endblock %}

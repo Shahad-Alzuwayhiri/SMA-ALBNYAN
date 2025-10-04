@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}العقود المغلقة{% endblock %}
+{% block head %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+{% endblock %}
+{% block content %}
+<div class="dashboard-layout">
+  <div class="dashboard-main">
+  {# body class controlled centrally in base.html via auth_page #}
+
+    <div class="modern-header">
+      {% from '_macros.html' import back_button %}{{ back_button() }}
+      <h2>العقود المغلقة</h2>
+    </div>
+
+    <div class="modern-table-wrap">
+      <table class="modern-table">
+        <thead>
+          <tr>
+            <th>PDF</th>
+            <th>رقم العقد</th>
+            <th>العميل</th>
+            <th>الحالة</th>
+            <th>تاريخ الإنشاء</th>
+            <th>إجراءات</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in contracts_closed %}
+          <tr>
+            <td>
+              <a href="{{ url_for('contracts_pdf', cid=c.id) }}" class="modern-pdf-btn">PDF</a>
+            </td>
+            <td>{{ c.serial }}</td>
+            <td>{{ c.client_name }}</td>
+            <td>
+              <span class="modern-status modern-status-closed">{{ c.status_display }}</span>
+            </td>
+            <td>{{ c.created_at.strftime('%Y-%m-%d') if c.created_at else '' }}</td>
+            <td>
+              <a href="{{ url_for('contracts_detail', cid=c.id) }}" class="modern-action-btn">عرض</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% block extra_scripts %}
+    <script src="{{ url_for('static', filename='js/pdf_viewer.js') }}"></script>
+  {% endblock %}
+
+</div>
+{% endblock %}

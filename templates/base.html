@@ -2,43 +2,28 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="utf-8">
-    <title>{{ BRAND.name if BRAND and BRAND.name else '' }}{% block title %}{% endblock %}</title>
+    <title>{{ BRAND.name if BRAND is defined and BRAND.name is defined and BRAND.name else '' }}{% block title %}{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/contracts.css') }}">
-    <style>
-        body { font-family: 'Tahoma', 'Amiri', sans-serif; background: #f8fafc; color: #1F3C88; }
-        .navbar { background: #1F3C88; color: #fff; padding: 12px 0; }
-        .navbar img { height: 38px; vertical-align: middle; margin-left: 12px; }
-        .navbar .brand { font-size: 1.3em; font-weight: bold; }
-        .navbar .nav-links { float: right; }
-        .navbar .nav-links a { color: #fff; margin: 0 10px; text-decoration: none; }
-        .notif-badge { background: #22B8CF; color: #fff; border-radius: 50%; padding: 2px 8px; font-size: 0.9em; margin-right: 6px; }
-        .container { max-width: 1100px; margin: 30px auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px #e5e7eb; padding: 32px; }
-        footer { text-align: center; color: #888; margin: 30px 0 0 0; font-size: 0.95em; }
-    </style>
-    {% block head %}{% endblock %}
+    {% if auth_page %}
+      <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+    {% else %}
+      <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard_custom.css') }}">
+      <link rel="stylesheet" href="{{ url_for('static', filename='css/contracts_modern.css') }}">
+      <link rel="stylesheet" href="{{ url_for('static', filename='css/topnav_custom.css') }}">
+    {% endif %}
+  <!-- merge_dashboard.css removed: consolidated into dashboard_custom.css -->
+  {% block head %}{% endblock %}
 </head>
-<body>
-    <div class="navbar">
-        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="شعار سما" />
-        <span class="brand">{{ BRAND.name if BRAND and BRAND.name else '' }}</span>
-        <span class="nav-links">
-            <a href="{{ url_for('dashboard') }}">لوحة التحكم</a>
-            <a href="{{ url_for('contracts_list') }}">العقود</a>
-            <a href="{{ url_for('notifications') }}">
-                الإشعارات
-                {% if current_user.is_authenticated and unread_count is defined and unread_count %}
-                    <span class="notif-badge">{{ unread_count }}</span>
-                {% endif %}
-            </a>
-            {% if current_user.is_authenticated and current_user.role is defined and current_user.role == 'manager' %}
-                <a href="{{ url_for('manager_dashboard') }}">لوحة المدير</a>
-            {% endif %}
-            <a href="{{ url_for('logout') }}">خروج</a>
-        </span>
+<body class="{% if auth_page %}auth-bg bg-[#e3e8ee]{% else %}dashboard-bg bg-[#e3e8ee]{% endif %}">
+  {% if not auth_page %}
+  {% include '_topnav.html' %}
+  {% include '_sidebar.html' %}
+  <div style="height:64px"></div>
+    <div class="sama-header">
+      {{ BRAND.name if BRAND is defined and BRAND.name is defined and BRAND.name else 'سما التجارية' }}
     </div>
+  {% endif %}
     <div class="container">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
@@ -51,9 +36,16 @@
         {% endwith %}
         {% block content %}{% endblock %}
     </div>
-    <footer>
-        جميع الحقوق محفوظة &copy; {{ BRAND.name if BRAND and BRAND.name else '' }} 2025
-    </footer>
+  {% if not auth_page %}
+  <div class="sama-footer">
+    جميع الحقوق محفوظة &copy; {{ BRAND.name if BRAND is defined and BRAND.name is defined and BRAND.name else 'سما التجارية' }} 2025
+  </div>
+  {% endif %}
+
+  {# overlay used for mobile sidebar when open #}
+  <div class="sidebar-overlay" aria-hidden="true"></div>
+
     {% block scripts %}{% endblock %}
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 </body>
 </html>

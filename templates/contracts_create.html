@@ -1,10 +1,20 @@
-<!DOCTYPE html>
-<html lang="ar">
 {% extends "base.html" %}
 {% block title %}عقد جديد{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/contracts.css') }}">{% endblock %}
+{% block extra_head %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/contracts_create_sama.css') }}">
+{% endblock %}
 {% block content %}
-<div class="card p-3">
+<div class="app-container content-with-sidebar">
+  <div class="container mx-auto px-4 max-w-screen-xl space-y-6">
+    <div class="modern-header" style="display:flex;justify-content:flex-end;align-items:center;">
+      {% from '_macros.html' import back_button %}{{ back_button(size='1.7em') }}
+    </div>
+    {# body class controlled centrally in base.html via auth_page #}
+    <div class="modern-header">
+      {% from '_macros.html' import back_button %}{{ back_button() }}
+    </div>
+    <div class="card p-3">
   <div class="d-flex align-items-center justify-content-between mb-2" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
     <h3 class="m-0">إنشاء عقد جديد</h3>
     <div class="alert alert-info m-0">رقم العقد سيتولّد تلقائيًا: <strong>{{ generated_no }}</strong></div>
@@ -122,8 +132,9 @@
     </div>
   </form>
 
-  {% if preview_content %}
-    <hr><h4>معاينة نص العقد</h4>
-  {% endif %}
+    {% if preview_content %}
+      <hr><h4>معاينة نص العقد</h4>
+    {% endif %}
+  </div>
 </div>
 {% endblock %}

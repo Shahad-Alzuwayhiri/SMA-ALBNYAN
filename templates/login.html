@@ -1,54 +1,48 @@
 {% extends "base.html" %}
 {% block title %}تسجيل الدخول{% endblock %}
+{# auth.css loaded from base.html when auth_page is true - removed per-template duplicate #}
 {% block content %}
 <div class="auth-page">
-  <div class="auth-card">
-    <div class="inner">
-      <h2 class="auth-title">تسجيل الدخول</h2>
-      <form method="POST" class="form" novalidate>
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <div class="form-row">
-          <label class="form-label" for="email">البريد الإلكتروني</label>
-          <input id="email" class="input" name="email" type="email"
-                 placeholder="name@example.com" required
-                 value="{{ request.form.email or '' }}" dir="ltr"
-                 inputmode="email" autocomplete="username">
-        </div>
-        <div class="form-row">
-          <label class="form-label" for="pwd">كلمة المرور</label>
-          <div class="input-wrap">
-            <input class="input" id="pwd" name="password" type="password"
-                   placeholder="••••••••" required autocomplete="current-password">
-            <button type="button" class="toggle-eye" aria-label="إظهار/إخفاء" onclick="togglePwd('pwd', this)">👁️</button>
-          </div>
-        </div>
+  <div class="auth-split">
+    <div class="auth-left">
+      <div class="logo-circle">🏠</div>
+      <h2>مرحبًا بعودتك!</h2>
+      <p>سجّل دخولك لإدارة العقود والعقارات بسرعة وأمان.</p>
+      <div style="margin-top:14px">
+        <a href="{{ url_for('signup') }}" class="btn btn-ghost" style="color:var(--neutral-white);border-color:rgba(255,255,255,0.15)">إنشاء حساب جديد</a>
+      </div>
+      <!-- decorative building -->
+      <svg class="hero-illustration" viewBox="0 0 120 80" xmlns="http://www.w3.org/2000/svg">
+        <rect x="10" y="30" width="30" height="40" rx="3" fill="#FFFFFF"/>
+        <rect x="45" y="20" width="25" height="50" rx="3" fill="#FFFFFF"/>
+        <rect x="75" y="10" width="30" height="60" rx="3" fill="#FFFFFF"/>
+      </svg>
+    </div>
 
-        <!-- خيار الدخول كمدير (لا يغيّر منطقك الحالي؛ يرسل as_manager=1 للباك‌اند إن رغبت باستخدامه) -->
-        <div class="form-row" style="margin-top:6px;">
-          <label class="form-check" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-            <input type="checkbox" name="as_manager" value="1" {% if request.form.as_manager %}checked{% endif %}>
-            الدخول كمدير
-          </label>
-          <div class="small" style="color:var(--muted);margin-top:4px;">
-            إذا كان لديك صلاحيات مدير، فعِّل هذا الخيار ليتم توجيهك إلى لوحة المدير بعد تسجيل الدخول.
+    <div class="auth-right">
+      <div class="auth-card">
+        <h3 style="margin:0 0 8px 0;color:var(--primary-blue)">تسجيل الدخول</h3>
+        <form method="POST" action="{{ url_for('login') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="form-row">
+            <label for="identity">البريد أو الجوال</label>
+            <input id="identity" name="identity" type="text" placeholder="الايميل أو رقم الجوال" required value="{{ request.form.identity or '' }}">
           </div>
-        </div>
-
-        <button class="btn btn-primary btn-block" type="submit">دخول</button>
-        <div class="auth-actions">
-          <a class="btn-link small" href="{{ url_for('forgot_password') }}">نسيت كلمة المرور؟</a>
-          <a class="btn-link small" href="{{ url_for('signup') }}">تسجيل جديد</a>
-        </div>
-      </form>
+          <div class="form-row">
+            <label for="password">كلمة المرور</label>
+            <input id="password" name="password" type="password" placeholder="********" required>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px">
+            <div><label style="font-weight:600"><input type="checkbox" name="remember"> تذكرني</label></div>
+            <div><a href="{{ url_for('forgot_password') }}">نسيت كلمة المرور؟</a></div>
+          </div>
+          <div style="margin-top:18px;display:flex;gap:12px;justify-content:flex-end">
+            <button type="submit" class="btn btn-primary">دخول</button>
+            <a href="{{ url_for('signup') }}" class="btn btn-ghost">إنشاء حساب</a>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
 </div>
-
-<script>
-function togglePwd(id, btn){
-  const i = document.getElementById(id);
-  i.type = (i.type === 'password') ? 'text' : 'password';
-  btn.style.opacity = (i.type === 'password') ? 0.7 : 1;
-}
-</script>
 {% endblock %}

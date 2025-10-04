@@ -1,0 +1,14 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+outputs/
+*.log
+tmp_*.pdf
+*.egg-info/
+.vscode/
+.pytest_cache/
+/.mypy_cache/

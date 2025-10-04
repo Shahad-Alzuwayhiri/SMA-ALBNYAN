@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}الملف الشخصي{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard_custom.css') }}">
+{% endblock %}
+{% block content %}
+{# body class controlled centrally in base.html via auth_page #}
+<div class="dashboard-main">
+  <button onclick="window.history.back()" class="btn-back" title="رجوع">&#8594;</button>
+  <div class="dashboard-title">الملف الشخصي</div>
+  <form method="POST">
+    <div class="mb-3">
+      <label>الاسم</label>
+      <input type="text" name="name" value="{{ current_user.name }}" class="form-control" required>
+    </div>
+    <div class="mb-3">
+      <label>البريد الإلكتروني</label>
+      <input type="email" name="email" value="{{ current_user.email }}" class="form-control" required>
+    </div>
+    <button type="submit" class="btn btn-primary">حفظ التغييرات</button>
+  </form>
+</div>
+{% endblock %}

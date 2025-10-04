@@ -1,54 +1,140 @@
 {% extends "base.html" %}
-{% block title %} | لوحة الموظف{% endblock %}
+{% block title %}لوحة التحكم{% endblock %}
+{% block head %}{% endblock %}
 {% block content %}
-<h2 class="text-brand">لوحة تحكم الموظف</h2>
-<div class="stats-row" style="display:flex;gap:24px;margin-bottom:32px;">
-    <div class="stat-card">
-        <div class="stat-title">عدد العقود التي أنشأتها</div>
-        <div class="stat-value">{{ metrics.created_count }}</div>
+<div class="app-container content-with-sidebar">
+  <div class="container mx-auto px-4 max-w-screen-xl space-y-6">
+
+  {# Quick Actions Card #}
+  <div class="bg-white rounded-xl shadow-md p-4 mb-6">
+    <h3 class="font-bold" style="text-align:center;margin:0 0 12px">إجراءات سريعة</h3>
+    <div class="flex justify-center" style="gap:12px;flex-wrap:wrap">
+      {# quick action buttons #}
+    <a href="{{ url_for('contracts_create') }}" class="qa-btn" aria-label="عقد جديد">
+      <span class="qa-icon" aria-hidden="true">➕</span>
+      <span class="qa-label">عقد جديد</span>
+    </a>
+    <a href="{{ url_for('contracts_list') }}" class="qa-btn" aria-label="تعديل عقد">
+      <span class="qa-icon" aria-hidden="true">🖊</span>
+      <span class="qa-label">تعديل عقد</span>
+    </a>
+    <a href="#" class="qa-btn" aria-label="إرسال للتوقيع">
+      <span class="qa-icon" aria-hidden="true">✉️</span>
+      <span class="qa-label">إرسال للتوقيع</span>
+    </a>
+    <a href="#" class="qa-btn" aria-label="تصدير PDF">
+      <span class="qa-icon" aria-hidden="true">⬇️</span>
+      <span class="qa-label">تصدير PDF</span>
+    </a>
+    <a href="#" class="qa-btn" aria-label="أرشفة">
+      <span class="qa-icon" aria-hidden="true">📂</span>
+      <span class="qa-label">أرشفة</span>
+    </a>
+        </div>
+      </div>
+
+  {# Contracts Summary Cards — Image-like colored cards per screenshot (solid color with white text) #}
+  <div class="max-w-cards">
+  <section class="grid grid-cols-12 gap-6 mb-6 cards-grid">
+    <!-- إجمالي العقود -->
+    <div class="col-span-12 lg:col-span-4">
+      <div class="summary-card summary-yellow min-h-[160px]">
+        <div class="top-strip"></div>
+        <div class="card-body">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <h4 class="card-title">إجمالي العقود</h4>
+            <span class="w-7 h-7 rounded-full" style="background:#f0ad4e;"></span>
+          </div>
+          <div class="card-number text-4xl">{{ metrics.total_count|default(0) }}</div>
+          <p class="card-sub">مجموع السجلات</p>
+        </div>
+      </div>
     </div>
-    <div class="stat-card">
-        <div class="stat-title">العقود بانتظار توقيع المدير</div>
-        <div class="stat-value">{{ metrics.pending_count }}</div>
+
+    <!-- تحت الإجراء -->
+    <div class="col-span-12 lg:col-span-4">
+      <div class="summary-card summary-blue min-h-[160px]">
+        <div class="top-strip"></div>
+        <div class="card-body">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <h4 class="card-title">العقود تحت الإجراء</h4>
+            <span class="w-7 h-7 rounded-full" style="background:#4a90e2;"></span>
+          </div>
+          <div class="card-number text-4xl">{{ metrics.in_progress|default(metrics.pending_count|default(0)) }}</div>
+          <p class="card-sub">قيد التنفيذ</p>
+        </div>
+      </div>
     </div>
-    <div class="stat-card">
-        <div class="stat-title">العقود المنتهية/المرفوضة</div>
-        <div class="stat-value">{{ metrics.closed_count }}</div>
+
+    <!-- مغلقة -->
+    <div class="col-span-12 lg:col-span-4">
+      <div class="summary-card summary-red min-h-[160px]">
+        <div class="top-strip"></div>
+        <div class="card-body">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <h4 class="card-title">العقود المغلقة</h4>
+            <span class="w-7 h-7 rounded-full" style="background:#d9534f;"></span>
+          </div>
+          <div class="card-number text-4xl">{{ metrics.closed_count|default(0) }}</div>
+          <p class="card-sub">منتهية أو مرفوضة</p>
+        </div>
+      </div>
     </div>
+  </section>
+  </div>
+
+  {# Below the Cards: Notifications (left) and Tasks (right) #}
+  <section class="grid grid-cols-12 gap-6 mb-6">
+    <div class="col-span-12 md:col-span-6">
+      <div class="bg-white rounded-xl shadow-md p-4">
+      <h4 class="font-bold" style="margin:0 0 10px;text-align:right">الإشعارات</h4>
+      {% if tasks %}
+        <ul style="list-style:none;padding:0;margin:0;direction:rtl">
+          {% for t in tasks %}
+            <li style="display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px solid var(--border)">
+              <div style="display:flex;align-items:center;gap:10px">
+                <form method="post" action="{{ url_for('task_update', tid=t.id) }}" style="display:inline">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <input type="checkbox" name="done" onchange="this.form.submit()" {% if t.status=='done' %}checked{% endif %} aria-label="وضع كمكتملة">
+                </form>
+                <div>
+                  <div style="font-weight:700">{{ t.title }}</div>
+                  <div style="color:var(--muted);font-size:0.9rem">{{ t.due_date or '' }}</div>
+                </div>
+              </div>
+              <div>
+                <a href="{{ url_for('task_delete', tid=t.id) }}" class="btn btn-outline">حذف</a>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <div style="color:var(--muted);text-align:right">لا توجد مهام حالياً</div>
+      {% endif %}
+    </div>
+
+    <div class="col-span-12 md:col-span-6">
+      <div class="bg-white rounded-xl shadow-md p-4">
+      <h4 class="font-bold" style="margin:0 0 10px;text-align:right">مهامي</h4>
+      {% if notifications %}
+        <ul style="list-style:none;padding:0;margin:0;direction:rtl">
+          {% set shown = (notifications or [])[:5] %}
+          {% for n in shown %}
+            <li style="padding:10px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+              <div style="max-width:75%">{{ n.message }}</div>
+              <div style="font-size:0.8rem;color:var(--muted)">{{ n.human_time or n.created_at }}</div>
+            </li>
+          {% endfor %}
+        </ul>
+        <div style="text-align:right;margin-top:10px"><a href="{{ url_for('notifications') }}" class="btn btn-outline">عرض الكل</a></div>
+      {% else %}
+        <div style="color:var(--muted);text-align:right">لا توجد إشعارات جديدة</div>
+      {% endif %}
+    </div>
+  </div>
+
 </div>
-<div class="btn-row">
-    <a href="{{ url_for('contracts_create') }}" class="btn btn-primary">إنشاء عقد جديد</a>
-    <a href="{{ url_for('contracts_list') }}" class="btn btn-secondary">مكتبة العقود</a>
-    <a href="{{ url_for('notifications') }}" class="btn btn-info">الإشعارات</a>
-    <a href="{{ url_for('profile') }}" class="btn btn-light">الملف الشخصي</a>
-</div>
-<hr>
-<h3>آخر العقود</h3>
-<table class="contracts-table">
-    <thead>
-        <tr>
-            <th>رقم العقد</th>
-            <th>العميل</th>
-            <th>الحالة</th>
-            <th>تاريخ الإنشاء</th>
-            <th>إجراءات</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for c in recent_contracts %}
-        <tr>
-            <td>{{ c.serial }}</td>
-            <td>{{ c.client_name }}</td>
-            <td>{{ c.status_display }}</td>
-            <td>{{ c.created_at.strftime('%Y-%m-%d') }}</td>
-            <td>
-                <a href="{{ url_for('contracts_detail', cid=c.id) }}" class="btn btn-sm btn-outline-primary">عرض</a>
-                {% if c.status == 'draft' %}
-                    <a href="{{ url_for('contracts_edit', cid=c.id) }}" class="btn btn-sm btn-outline-secondary">تعديل</a>
-                {% endif %}
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-{% endblock content %}
+
+{# removed extra bottom KPI grid — Notifications & Tasks already present above #}
+
+{% endblock %}

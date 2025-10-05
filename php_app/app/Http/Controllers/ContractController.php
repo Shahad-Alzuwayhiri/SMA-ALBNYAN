@@ -77,4 +77,75 @@ class ContractController extends Controller
             'Content-Type' => 'text/html; charset=utf-8'
         ]);
     }
+
+    public function inProgress()
+    {
+        // Sample data - replace with real database query
+        $contracts_in_progress = [
+            (object)[
+                'id' => 1,
+                'serial' => 'CT-0001',
+                'client_name' => 'أحمد محمد',
+                'status' => 'in_progress',
+                'status_display' => 'قيد التنفيذ',
+                'created_at' => now()->subDays(5),
+            ],
+            (object)[
+                'id' => 2,
+                'serial' => 'CT-0002',
+                'client_name' => 'فاطمة علي',
+                'status' => 'pending',
+                'status_display' => 'بانتظار الموافقة',
+                'created_at' => now()->subDays(2),
+            ],
+        ];
+
+        return view('contracts.in_progress', compact('contracts_in_progress'));
+    }
+
+    public function closed()
+    {
+        // Sample data - replace with real database query
+        $contracts_closed = [
+            (object)[
+                'id' => 3,
+                'serial' => 'CT-0003',
+                'client_name' => 'محمد سالم',
+                'status' => 'completed',
+                'status_display' => 'مكتمل',
+                'created_at' => now()->subMonths(2),
+            ],
+            (object)[
+                'id' => 4,
+                'serial' => 'CT-0004',
+                'client_name' => 'نورا أحمد',
+                'status' => 'rejected',
+                'status_display' => 'مرفوض',
+                'created_at' => now()->subMonths(1),
+            ],
+        ];
+
+        return view('contracts.closed', compact('contracts_closed'));
+    }
+
+    public function approve($id)
+    {
+        // Logic to approve contract
+        // Contract::find($id)->update(['status' => 'approved']);
+        return back()->with('success', 'تم اعتماد العقد بنجاح');
+    }
+
+    public function reject($id)
+    {
+        // Logic to reject contract
+        // Contract::find($id)->update(['status' => 'rejected']);
+        return back()->with('success', 'تم رفض العقد');
+    }
+
+    public function archive($id)
+    {
+        // Logic to archive contract
+        // Contract::find($id)->update(['archived' => true]);
+        return back()->with('success', 'تم أرشفة العقد');
+    }
 }

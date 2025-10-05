@@ -1,0 +1,59 @@
+@extends('layouts.app')
+@section('title', 'تسجيل الدخول')
+
+@php $auth_page = true; @endphp
+
+@section('content')
+<div class="auth-page">
+  <div class="auth-split">
+    <div class="auth-left">
+      <div class="logo-circle">🏠</div>
+      <h2>مرحبًا بعودتك!</h2>
+      <p>سجّل دخولك لإدارة العقود والعقارات بسرعة وأمان.</p>
+      <div style="margin-top:14px">
+        <a href="{{ route('register') }}" class="btn btn-ghost" style="color:var(--neutral-white);border-color:rgba(255,255,255,0.15)">إنشاء حساب جديد</a>
+      </div>
+      <!-- decorative building -->
+      <svg class="hero-illustration" viewBox="0 0 120 80" xmlns="http://www.w3.org/2000/svg">
+        <rect x="10" y="30" width="30" height="40" rx="3" fill="#FFFFFF"/>
+        <rect x="45" y="20" width="25" height="50" rx="3" fill="#FFFFFF"/>
+        <rect x="75" y="10" width="30" height="60" rx="3" fill="#FFFFFF"/>
+      </svg>
+    </div>
+
+    <div class="auth-right">
+      <div class="auth-card">
+        <h3 style="margin:0 0 8px 0;color:var(--primary-blue)">تسجيل الدخول</h3>
+        
+        @if ($errors->any())
+          <div class="alert alert-danger">
+            @foreach ($errors->all() as $error)
+              <p>{{ $error }}</p>
+            @endforeach
+          </div>
+        @endif
+
+        <form method="POST" action="{{ route('login') }}">
+          @csrf
+          <div class="form-row">
+            <label for="identity">البريد أو الجوال</label>
+            <input id="identity" name="identity" type="text" placeholder="الايميل أو رقم الجوال" required value="{{ old('identity') }}">
+          </div>
+          <div class="form-row">
+            <label for="password">كلمة المرور</label>
+            <input id="password" name="password" type="password" placeholder="********" required>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px">
+            <div><label style="font-weight:600"><input type="checkbox" name="remember"> تذكرني</label></div>
+            <div><a href="{{ route('password.request') }}">نسيت كلمة المرور؟</a></div>
+          </div>
+          <div style="margin-top:18px;display:flex;gap:12px;justify-content:flex-end">
+            <button type="submit" class="btn btn-primary">دخول</button>
+            <a href="{{ route('register') }}" class="btn btn-ghost">إنشاء حساب</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+@endsection

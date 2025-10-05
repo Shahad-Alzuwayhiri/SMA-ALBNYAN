@@ -2,23 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Contract;
-use App\Models\User;
-
-class DashboardController extends Controller
+class DashboardController
 {
     public function index()
     {
         $user = auth()->user();
         
-        // جمع الإحصائيات
+        // جمع الإحصائيات (بيانات وهمية للعرض)
         $metrics = [
-            'total_count' => Contract::count(),
-            'pending_count' => Contract::where('status', 'pending')->count(),
-            'in_progress' => Contract::where('status', 'in_progress')->count(),
-            'closed_count' => Contract::whereIn('status', ['completed', 'rejected'])->count(),
-            'users_count' => User::count(),
+            'total_count' => 15,
+            'pending_count' => 3,
+            'in_progress' => 8,
+            'closed_count' => 4,
+            'users_count' => 10,
         ];
 
         // مهام وهمية للعرض
@@ -29,8 +25,8 @@ class DashboardController extends Controller
 
         // إشعارات وهمية
         $notifications = [
-            ['message' => 'تم إنشاء عقد جديد', 'created_at' => now()->subHours(2)->format('Y-m-d H:i')],
-            ['message' => 'يتطلب عقد #123 موافقة', 'created_at' => now()->subHours(5)->format('Y-m-d H:i')],
+            ['message' => 'تم إنشاء عقد جديد', 'created_at' => date('Y-m-d H:i')],
+            ['message' => 'يتطلب عقد #123 موافقة', 'created_at' => date('Y-m-d H:i')],
         ];
 
         return view('dashboard', compact('metrics', 'tasks', 'notifications'));
@@ -38,17 +34,19 @@ class DashboardController extends Controller
 
     public function managerDashboard()
     {
-        // التحقق من صلاحيات المدير
-        if (!auth()->user()->isManager()) {
-            return redirect()->route('dashboard')->with('error', 'ليس لديك صلاحية للوصول لهذه الصفحة');
+        // التحقق من صلاحيات المدير (تبسيط للعرض)
+        $user = auth()->user();
+        if (!$user || $user->role !== 'manager') {
+            header('Location: /');
+            exit;
         }
 
         $metrics = [
-            'total_count' => Contract::count(),
-            'pending_count' => Contract::where('status', 'pending')->count(),
-            'closed_count' => Contract::whereIn('status', ['completed', 'rejected'])->count(),
-            'employees_count' => User::where('role', 'employee')->count(),
-            'users_count' => User::count(),
+            'total_count' => 15,
+            'pending_count' => 3,
+            'closed_count' => 4,
+            'employees_count' => 8,
+            'users_count' => 10,
         ];
 
         // بيانات المخطط البياني
@@ -72,26 +70,36 @@ class DashboardController extends Controller
         ];
 
         $notifications = [
-            ['message' => 'عقد جديد يحتاج موافقة', 'created_at' => now()->subHours(1)->format('H:i')],
-            ['message' => 'تم إنجاز عقد #456', 'created_at' => now()->subHours(3)->format('H:i')],
+            ['message' => 'عقد جديد يحتاج موافقة', 'created_at' => date('H:i')],
+            ['message' => 'تم إنجاز عقد #456', 'created_at' => date('H:i', strtotime('-3 hours'))],
         ];
 
         $recent_activities = [
-            ['type' => 'contract', 'title' => 'إنشاء عقد #789', 'actor' => 'أحمد محمد', 'created_at' => now()->subMinutes(30)->format('H:i')],
-            ['type' => 'file', 'title' => 'عقد_شركة_ABC.pdf', 'name' => 'عقد_شركة_ABC.pdf', 'created_at' => now()->subHours(1)->format('H:i')],
+            ['type' => 'contract', 'title' => 'إنشاء عقد #789', 'actor' => 'أحمد محمد', 'created_at' => date('H:i', strtotime('-30 minutes'))],
+            ['type' => 'file', 'title' => 'عقد_شركة_ABC.pdf', 'name' => 'عقد_شركة_ABC.pdf', 'created_at' => date('H:i', strtotime('-1 hour'))],
         ];
 
-        $all_contracts = Contract::with('user')->latest()->limit(10)->get()->map(function($contract) {
-            return [
-                'id' => $contract->id,
-                'serial' => $contract->serial ?? '#' . $contract->id,
-                'employee_name' => $contract->user->name ?? 'غير محدد',
-                'client_name' => $contract->client_name ?? 'غير محدد',
-                'status' => $contract->status,
-                'status_display' => $this->getStatusDisplay($contract->status),
-                'created_at' => $contract->created_at->format('Y-m-d'),
-            ];
-        })->toArray();
+        // عقود وهمية للعرض
+        $all_contracts = [
+            [
+                'id' => 1,
+                'serial' => '#001',
+                'employee_name' => 'أحمد محمد',
+                'client_name' => 'شركة الرياض',
+                'status' => 'pending',
+                'status_display' => '<span class="badge badge-warning">بانتظار الموافقة</span>',
+                'created_at' => date('Y-m-d'),
+            ],
+            [
+                'id' => 2,
+                'serial' => '#002',
+                'employee_name' => 'فاطمة علي',
+                'client_name' => 'مؤسسة جدة',
+                'status' => 'approved',
+                'status_display' => '<span class="badge badge-success">معتمد</span>',
+                'created_at' => date('Y-m-d', strtotime('-1 day')),
+            ],
+        ];
 
         return view('manager_dashboard', compact(
             'metrics', 'chart_data', 'tasks', 'notifications', 
@@ -99,16 +107,19 @@ class DashboardController extends Controller
         ));
     }
 
-    private function getStatusDisplay($status)
+    public function updateTask($id)
     {
-        $statuses = [
-            'pending' => '<span class="badge badge-warning">بانتظار الموافقة</span>',
-            'approved' => '<span class="badge badge-success">معتمد</span>',
-            'in_progress' => '<span class="badge badge-info">قيد التنفيذ</span>',
-            'completed' => '<span class="badge badge-success">مكتمل</span>',
-            'rejected' => '<span class="badge badge-danger">مرفوض</span>',
-        ];
+        // وضع المهمة كمكتملة
+        $_SESSION['task_' . $id . '_completed'] = true;
+        header('Location: ' . $_SERVER['HTTP_REFERER']);
+        exit;
+    }
 
-        return $statuses[$status] ?? '<span class="badge badge-secondary">' . $status . '</span>';
+    public function deleteTask($id)
+    {
+        // حذف المهمة
+        unset($_SESSION['task_' . $id]);
+        header('Location: ' . $_SERVER['HTTP_REFERER']);
+        exit;
     }
 }

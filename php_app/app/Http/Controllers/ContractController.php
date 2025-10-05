@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use GuzzleHttp\Client;
-use Illuminate\Routing\Controller;
+use Illuminate\Routing\Controller as BaseController;
+use function view;
+use function redirect;
+class ContractController extends BaseController
+{
 
 class ContractController extends Controller
 {
@@ -19,12 +21,12 @@ class ContractController extends Controller
         return view('contracts.create');
     }
 
-    public function store(Request $request)
-    {
-        // validate and store contract, simplified example
-        $data = $request->validate([
+        $request->validate([
             'partner2_name' => 'required|string',
             // ... other fields
+        ]);
+        // store to DB (to implement)
+        return redirect()->route('contracts.index');
         ]);
         // store to DB (to implement)
         return redirect()->route('contracts.index');

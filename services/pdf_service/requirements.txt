@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+PyMuPDF
+reportlab
+arabic-reshaper
+python-bidi
+Pillow
+pypdf

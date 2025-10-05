@@ -94,3 +94,11 @@ async def render_overlay(positions: dict):
     c.save()
     out_buf.seek(0)
     return Response(content=out_buf.read(), media_type='application/pdf')
+
+@app.get("/")
+async def root():
+    return {"message": "ContractSama PDF Service is running", "version": "1.0.0"}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="127.0.0.1", port=8001)

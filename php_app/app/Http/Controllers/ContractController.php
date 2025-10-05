@@ -38,64 +38,46 @@ class ContractController extends Controller
 
     public function pdf($id)
     {
-        // simplified: fetch contract data from DB (pseudo)
-        $contract = [
-            'id' => $id,
-            'content' => '...contract content...'
+        $contract = Contract::find($id);
+        if (!$contract) {
+            return response('Contract not found', 404);
+        }
+
+        $pdfService = new \App\Services\PdfService();
+        
+        // Prepare contract data for PDF generation
+        $contractData = [
+            'partner2_name' => $contract->client_name,
+            'partner_name' => $contract->client_name,
+            'partner_id' => $contract->client_id_number,
+            'partner_phone' => $contract->client_phone,
+            'client_address' => $contract->client_address,
+            'investment_amount' => $contract->investment_amount,
+            'capital_amount' => $contract->capital_amount,
+            'profit' => $contract->profit_percent,
+            'profit_percent' => $contract->profit_percent,
+            'profit_interval_months' => $contract->profit_interval_months,
+            'withdrawal_notice_days' => $contract->withdrawal_notice_days,
+            'start_date_h' => $contract->start_date_h,
+            'end_date_h' => $contract->end_date_h,
+            'commission_percent' => $contract->commission_percent,
+            'exit_notice_days' => $contract->exit_notice_days,
+            'penalty_amount' => $contract->penalty_amount,
+            'contract_number' => $contract->client_contract_no,
         ];
 
-        $pdfService = env('PDF_SERVICE_URL', 'http://127.0.0.1:8001');
-        $client = new Client(['base_uri' => $pdfService]);
-
-        // 1) If we had an original PDF design, we'd upload it. Here we send the HTML/text.
-        // For demo we'll assume there's a design file at storage path 'designs/contract_design.pdf'
+        // Check for design template
         $designPath = storage_path('app/designs/contract_design.pdf');
-        if (!file_exists($designPath)) {
-            return response('Design PDF missing', 500);
+        
+        $pdfContent = $pdfService->generateContractPdf($contractData, $designPath);
+        
+        if (!$pdfContent) {
+            return response('Failed to generate PDF', 500);
         }
 
-        // 2) Upload design and get positions
-        try {
-            $res = $client->request('POST', '/extract_positions', [
-                'multipart' => [
-                    [
-                        'name' => 'file',
-                        'contents' => fopen($designPath, 'r'),
-                        'filename' => basename($designPath),
-                    ],
-                ],
-                'timeout' => 30
-            ]);
-        } catch (\Exception $e) {
-            return response('PDF service error: ' . $e->getMessage(), 500);
-        }
-        $positions = json_decode($res->getBody()->getContents(), true);
-
-        // 3) Send positions to render_overlay and get overlay PDF
-        try {
-            $res2 = $client->request('POST', '/render_overlay', [
-                'json' => $positions,
-                'timeout' => 30
-            ]);
-        } catch (\Exception $e) {
-            return response('PDF render error: ' . $e->getMessage(), 500);
-        }
-        $overlayPdf = $res2->getBody()->getContents();
-
-        // 4) Save overlay temporarily and attempt merge via shell pdftk (or use FPDI/TCPDI in PHP)
-        $tmpOverlay = storage_path('app/tmp/overlay_' . $id . '.pdf');
-        @mkdir(dirname($tmpOverlay), 0755, true);
-        file_put_contents($tmpOverlay, $overlayPdf);
-
-        $design = $designPath;
-        $out = storage_path('app/tmp/final_' . $id . '.pdf');
-        $cmd = "pdftk " . escapeshellarg($design) . " multibackground " . escapeshellarg($tmpOverlay) . " output " . escapeshellarg($out);
-        exec($cmd, $outLines, $rc);
-        if ($rc !== 0) {
-            // fallback: return overlay directly
-            return response($overlayPdf, 200, ['Content-Type' => 'application/pdf']);
-        }
-
-        return response()->file($out, ['Content-Type' => 'application/pdf']);
+        return response($pdfContent, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="contract_' . $id . '.pdf"'
+        ]);
     }
 }

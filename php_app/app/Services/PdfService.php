@@ -2,8 +2,6 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\Log;
-
 class PdfService
 {
     private $templatePath;
@@ -23,7 +21,7 @@ class PdfService
         try {
             // Check if TCPDF is available
             if (!class_exists('TCPDF')) {
-                Log::warning('TCPDF not available, falling back to HTML');
+                error_log('TCPDF not available, falling back to HTML');
                 return false;
             }
 
@@ -60,7 +58,7 @@ class PdfService
             return $pdf->Output('', 'S');
 
         } catch (\Exception $e) {
-            Log::error('PDF Generation Error: ' . $e->getMessage());
+            error_log('PDF Generation Error: ' . $e->getMessage());
             return false;
         }
     }
@@ -80,7 +78,7 @@ class PdfService
             } catch (\Exception $e2) {
                 // Ultimate fallback
                 $pdf->SetFont('helvetica', '', 12);
-                Log::warning('Using non-Arabic font as fallback');
+                error_log('Using non-Arabic font as fallback');
             }
         }
     }

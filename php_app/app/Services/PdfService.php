@@ -2,173 +2,247 @@
 
 namespace App\Services;
 
-use GuzzleHttp\Client;
-use GuzzleHttp\Exception\RequestException;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 
 class PdfService
 {
-    private Client $client;
-    private string $serviceUrl;
+    private $templatePath;
+    private $fontsPath;
 
     public function __construct()
     {
-        $this->serviceUrl = env('PDF_SERVICE_URL', 'http://127.0.0.1:8001');
-        $this->client = new Client([
-            'base_uri' => $this->serviceUrl,
-            'timeout' => 60,
-        ]);
+        $this->templatePath = storage_path('app/templates/');
+        $this->fontsPath = public_path('static/fonts/');
     }
 
     /**
-     * Extract text positions from a PDF file
+     * Generate contract PDF using TCPDF with full Arabic support
      */
-    public function extractPositions(string $pdfPath): ?array
+    public function generateContractPdf(array $contractData, ?string $templatePath = null): string|false
     {
         try {
-            if (!file_exists($pdfPath)) {
-                Log::error("PDF file not found: {$pdfPath}");
-                return null;
+            // Check if TCPDF is available
+            if (!class_exists('TCPDF')) {
+                Log::warning('TCPDF not available, falling back to HTML');
+                return false;
             }
 
-            $response = $this->client->request('POST', '/extract_positions', [
-                'multipart' => [
-                    [
-                        'name' => 'file',
-                        'contents' => fopen($pdfPath, 'r'),
-                        'filename' => basename($pdfPath),
-                    ],
-                ],
-            ]);
-
-            $data = json_decode($response->getBody()->getContents(), true);
-            return $data['positions'] ?? null;
-
-        } catch (RequestException $e) {
-            Log::error("PDF extraction failed: " . $e->getMessage());
-            return null;
-        }
-    }
-
-    /**
-     * Render overlay PDF from positions data
-     */
-    public function renderOverlay(array $positions): ?string
-    {
-        try {
-            $response = $this->client->request('POST', '/render_overlay', [
-                'json' => ['positions' => $positions],
-            ]);
-
-            return $response->getBody()->getContents();
-
-        } catch (RequestException $e) {
-            Log::error("PDF overlay render failed: " . $e->getMessage());
-            return null;
-        }
-    }
-
-    /**
-     * Generate contract PDF using hybrid approach
-     */
-    public function generateContractPdf(array $contractData, string $templatePath = null): ?string
-    {
-        // 1. If we have a design template, extract positions
-        if ($templatePath && file_exists($templatePath)) {
-            $positions = $this->extractPositions($templatePath);
-            if (!$positions) {
-                return null;
-            }
-
-            // 2. Modify positions with actual contract data (simplified)
-            $this->populatePositionsWithData($positions, $contractData);
-
-            // 3. Render overlay with populated data
-            $overlayPdf = $this->renderOverlay($positions);
-            if (!$overlayPdf) {
-                return null;
-            }
-
-            // 4. Merge with design template (would need additional service endpoint or FPDI)
-            return $this->mergeDesignWithOverlay($templatePath, $overlayPdf);
-        }
-
-        // Fallback: generate simple PDF from template (to be implemented)
-        return $this->generateSimplePdf($contractData);
-    }
-
-    /**
-     * Populate extracted positions with actual contract data
-     */
-    private function populatePositionsWithData(array &$positions, array $data): void
-    {
-        foreach ($positions as &$position) {
-            $text = $position['text'] ?? '';
+            // Create new PDF document
+            $pdf = new \TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
             
-            // Replace placeholders with actual data
-            foreach ($data as $key => $value) {
-                $placeholder = "{{ data.{$key} }}";
-                if (str_contains($text, $placeholder)) {
-                    $position['text'] = str_replace($placeholder, $value ?? '', $text);
-                }
-            }
-        }
-    }
+            // Set document information
+            $pdf->SetCreator('ContractSama');
+            $pdf->SetAuthor('ContractSama System');
+            $pdf->SetTitle('عقد استثمار - رقم ' . ($contractData['contract_number'] ?? 'غير محدد'));
+            $pdf->SetSubject('عقد استثمار');
 
-    /**
-     * Merge design PDF with overlay PDF
-     */
-    private function mergeDesignWithOverlay(string $designPath, string $overlayPdf): ?string
-    {
-        // Save overlay temporarily
-        $tempOverlay = storage_path('app/temp/overlay_' . uniqid() . '.pdf');
-        @mkdir(dirname($tempOverlay), 0755, true);
-        file_put_contents($tempOverlay, $overlayPdf);
+            // Remove default header/footer
+            $pdf->setPrintHeader(false);
+            $pdf->setPrintFooter(false);
 
-        // Use pdftk for merging (if available)
-        $output = storage_path('app/temp/merged_' . uniqid() . '.pdf');
-        $command = sprintf(
-            'pdftk %s multibackground %s output %s',
-            escapeshellarg($designPath),
-            escapeshellarg($tempOverlay),
-            escapeshellarg($output)
-        );
+            // Set RTL support
+            $pdf->setRTL(true);
 
-        exec($command, $cmdOutput, $returnCode);
+            // Set margins
+            $pdf->SetMargins(20, 20, 20);
+            $pdf->SetAutoPageBreak(true, 20);
 
-        if ($returnCode === 0 && file_exists($output)) {
-            $result = file_get_contents($output);
-            @unlink($tempOverlay);
-            @unlink($output);
-            return $result;
-        }
+            // Set Arabic font
+            $this->setArabicFont($pdf);
 
-        // Fallback: return overlay only
-        @unlink($tempOverlay);
-        return $overlayPdf;
-    }
+            // Add page
+            $pdf->AddPage();
 
-    /**
-     * Generate simple PDF without overlay (fallback)
-     */
-    private function generateSimplePdf(array $contractData): string
-    {
-        // This would use TCPDF or similar to generate a basic PDF
-        // For now, return a placeholder
-        return "Simple PDF generation not implemented yet";
-    }
+            // Generate content
+            $this->generateContent($pdf, $contractData);
 
-    /**
-     * Health check for the Python service
-     */
-    public function healthCheck(): bool
-    {
-        try {
-            $response = $this->client->request('GET', '/health', ['timeout' => 5]);
-            return $response->getStatusCode() === 200;
-        } catch (RequestException $e) {
+            // Return PDF content as string
+            return $pdf->Output('', 'S');
+
+        } catch (\Exception $e) {
+            Log::error('PDF Generation Error: ' . $e->getMessage());
             return false;
         }
+    }
+
+    /**
+     * Set Arabic font for the PDF
+     */
+    private function setArabicFont($pdf): void
+    {
+        try {
+            // Try built-in Arabic fonts first
+            $pdf->SetFont('aealarabiya', '', 12);
+        } catch (\Exception $e) {
+            try {
+                // Fallback to DejaVu Sans (supports Arabic)
+                $pdf->SetFont('dejavusans', '', 12);
+            } catch (\Exception $e2) {
+                // Ultimate fallback
+                $pdf->SetFont('helvetica', '', 12);
+                Log::warning('Using non-Arabic font as fallback');
+            }
+        }
+    }
+
+    /**
+     * Generate the contract content
+     */
+    private function generateContent($pdf, array $data): void
+    {
+        // Title
+        $pdf->SetY(30);
+        $pdf->SetFont('', 'B', 18);
+        $pdf->Cell(0, 15, 'عقد استثمار', 0, 1, 'C');
+        
+        $pdf->Ln(10);
+
+        // Contract details
+        $pdf->SetFont('', '', 12);
+        
+        $content = $this->buildContractText($data);
+        
+        // Use writeHTML for better RTL support
+        $html = '<div dir="rtl" style="text-align: right; font-family: Arial;">';
+        $html .= nl2br($content);
+        $html .= '</div>';
+        
+        $pdf->writeHTML($html, true, false, true, false, '');
+    }
+
+    /**
+     * Build the contract text content
+     */
+    private function buildContractText(array $data): string
+    {
+        $text = "بسم الله الرحمن الرحيم\n\n";
+        
+        $text .= "رقم العقد: " . ($data['contract_number'] ?? 'غير محدد') . "\n";
+        $text .= "التاريخ: " . ($data['start_date_h'] ?? date('Y-m-d')) . "\n\n";
+        
+        $text .= "الأطراف:\n";
+        $text .= "الطرف الأول: شركة الاستثمار\n";
+        $text .= "الطرف الثاني: " . ($data['partner2_name'] ?? $data['partner_name'] ?? 'غير محدد') . "\n";
+        $text .= "رقم الهوية: " . ($data['partner_id'] ?? 'غير محدد') . "\n";
+        $text .= "الهاتف: " . ($data['partner_phone'] ?? 'غير محدد') . "\n\n";
+        
+        $text .= "شروط العقد:\n";
+        $text .= "• مبلغ الاستثمار: " . number_format($data['investment_amount'] ?? 0, 2) . " ريال\n";
+        $text .= "• مبلغ رأس المال: " . number_format($data['capital_amount'] ?? 0, 2) . " ريال\n";
+        $text .= "• نسبة الربح: " . ($data['profit_percent'] ?? 0) . "%\n";
+        $text .= "• فترة الأرباح: " . ($data['profit_interval_months'] ?? 3) . " أشهر\n";
+        $text .= "• إشعار الانسحاب: " . ($data['withdrawal_notice_days'] ?? 30) . " يوم\n";
+        $text .= "• تاريخ البداية: " . ($data['start_date_h'] ?? date('Y-m-d')) . "\n";
+        $text .= "• تاريخ الانتهاء: " . ($data['end_date_h'] ?? date('Y-m-d', strtotime('+1 year'))) . "\n";
+        $text .= "• نسبة العمولة: " . ($data['commission_percent'] ?? 0) . "%\n";
+        $text .= "• إشعار الخروج: " . ($data['exit_notice_days'] ?? 30) . " يوم\n";
+        $text .= "• مبلغ الغرامة: " . number_format($data['penalty_amount'] ?? 0, 2) . " ريال\n\n";
+        
+        $text .= "التوقيعات:\n\n";
+        $text .= "الطرف الأول: ________________\n\n";
+        $text .= "الطرف الثاني: ________________\n\n";
+        
+        return $text;
+    }
+
+    /**
+     * Generate HTML version of contract (fallback when TCPDF not available)
+     */
+    public function generateHtmlContract(array $data): string
+    {
+        $html = '<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <title>عقد استثمار - ' . ($data['contract_number'] ?? 'غير محدد') . '</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            direction: rtl; 
+            text-align: right; 
+            margin: 40px;
+            line-height: 1.6;
+        }
+        .header { 
+            text-align: center; 
+            font-size: 24px; 
+            font-weight: bold; 
+            margin-bottom: 30px; 
+            border-bottom: 2px solid #333;
+            padding-bottom: 15px;
+        }
+        .section { 
+            margin: 20px 0; 
+        }
+        .label { 
+            font-weight: bold; 
+            color: #333;
+        }
+        .terms {
+            background: #f8f9fa;
+            padding: 20px;
+            border-right: 4px solid #007bff;
+            margin: 20px 0;
+        }
+        .signatures {
+            margin-top: 60px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .signature-box {
+            text-align: center;
+            width: 200px;
+            border-top: 1px solid #333;
+            padding-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">عقد استثمار</div>
+    
+    <div class="section">
+        <span class="label">رقم العقد:</span> ' . ($data['contract_number'] ?? 'غير محدد') . '
+    </div>
+    
+    <div class="section">
+        <span class="label">التاريخ:</span> ' . ($data['start_date_h'] ?? date('Y-m-d')) . '
+    </div>
+    
+    <div class="section">
+        <h3>الأطراف:</h3>
+        <p><span class="label">الطرف الأول:</span> شركة الاستثمار</p>
+        <p><span class="label">الطرف الثاني:</span> ' . ($data['partner2_name'] ?? $data['partner_name'] ?? 'غير محدد') . '</p>
+        <p><span class="label">رقم الهوية:</span> ' . ($data['partner_id'] ?? 'غير محدد') . '</p>
+        <p><span class="label">الهاتف:</span> ' . ($data['partner_phone'] ?? 'غير محدد') . '</p>
+    </div>
+    
+    <div class="terms">
+        <h3>شروط العقد:</h3>
+        <ul>
+            <li>مبلغ الاستثمار: ' . number_format($data['investment_amount'] ?? 0, 2) . ' ريال</li>
+            <li>مبلغ رأس المال: ' . number_format($data['capital_amount'] ?? 0, 2) . ' ريال</li>
+            <li>نسبة الربح: ' . ($data['profit_percent'] ?? 0) . '%</li>
+            <li>فترة الأرباح: ' . ($data['profit_interval_months'] ?? 3) . ' أشهر</li>
+            <li>إشعار الانسحاب: ' . ($data['withdrawal_notice_days'] ?? 30) . ' يوم</li>
+            <li>تاريخ البداية: ' . ($data['start_date_h'] ?? date('Y-m-d')) . '</li>
+            <li>تاريخ الانتهاء: ' . ($data['end_date_h'] ?? date('Y-m-d', strtotime('+1 year'))) . '</li>
+            <li>نسبة العمولة: ' . ($data['commission_percent'] ?? 0) . '%</li>
+            <li>إشعار الخروج: ' . ($data['exit_notice_days'] ?? 30) . ' يوم</li>
+            <li>مبلغ الغرامة: ' . number_format($data['penalty_amount'] ?? 0, 2) . ' ريال</li>
+        </ul>
+    </div>
+    
+    <div class="signatures">
+        <div class="signature-box">
+            <p>الطرف الأول</p>
+        </div>
+        <div class="signature-box">
+            <p>الطرف الثاني</p>
+        </div>
+    </div>
+</body>
+</html>';
+
+        return $html;
     }
 }

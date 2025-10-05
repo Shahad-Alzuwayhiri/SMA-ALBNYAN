@@ -38,12 +38,11 @@ class ContractController extends Controller
 
     public function pdf($id)
     {
-        // For now, create sample contract data for testing
-        // Later this will fetch from database: $contract = Contract::find($id);
+        // Sample contract data for testing - later fetch from database
         $contractData = [
-            'contract_number' => 'CT-' . $id,
+            'contract_number' => 'CT-' . str_pad($id, 4, '0', STR_PAD_LEFT),
             'partner2_name' => 'أحمد محمد العلي',
-            'partner_name' => 'أحمد محمد العلي',
+            'partner_name' => 'أحمد محمد العلي', 
             'partner_id' => '1234567890',
             'partner_phone' => '+966501234567',
             'client_address' => 'الرياض، المملكة العربية السعودية',
@@ -59,24 +58,23 @@ class ContractController extends Controller
             'penalty_amount' => 5000,
         ];
 
-        // Try TCPDF first, fallback to HTML
-        $pdfService = new \App\Services\SimplePdfService();
+        $pdfService = new \App\Services\PdfService();
         
-        // Attempt PDF generation
+        // Try PDF generation first
         $pdfContent = $pdfService->generateContractPdf($contractData);
         
-        if ($pdfContent) {
-            // Success with TCPDF
+        if ($pdfContent !== false) {
+            // Success - return PDF
             return response($pdfContent, 200, [
                 'Content-Type' => 'application/pdf',
-                'Content-Disposition' => 'inline; filename="contract_' . $id . '.pdf"'
-            ]);
-        } else {
-            // Fallback to HTML
-            $htmlContent = $pdfService->generateSimplePdf($contractData);
-            return response($htmlContent, 200, [
-                'Content-Type' => 'text/html; charset=utf-8'
+                'Content-Disposition' => 'inline; filename="contract_' . $contractData['contract_number'] . '.pdf"'
             ]);
         }
+        
+        // Fallback to HTML version
+        $htmlContent = $pdfService->generateHtmlContract($contractData);
+        return response($htmlContent, 200, [
+            'Content-Type' => 'text/html; charset=utf-8'
+        ]);
     }
 }

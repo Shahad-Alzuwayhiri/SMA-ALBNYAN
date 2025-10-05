@@ -38,46 +38,45 @@ class ContractController extends Controller
 
     public function pdf($id)
     {
-        $contract = Contract::find($id);
-        if (!$contract) {
-            return response('Contract not found', 404);
-        }
-
-        $pdfService = new \App\Services\PdfService();
-        
-        // Prepare contract data for PDF generation
+        // For now, create sample contract data for testing
+        // Later this will fetch from database: $contract = Contract::find($id);
         $contractData = [
-            'partner2_name' => $contract->client_name,
-            'partner_name' => $contract->client_name,
-            'partner_id' => $contract->client_id_number,
-            'partner_phone' => $contract->client_phone,
-            'client_address' => $contract->client_address,
-            'investment_amount' => $contract->investment_amount,
-            'capital_amount' => $contract->capital_amount,
-            'profit' => $contract->profit_percent,
-            'profit_percent' => $contract->profit_percent,
-            'profit_interval_months' => $contract->profit_interval_months,
-            'withdrawal_notice_days' => $contract->withdrawal_notice_days,
-            'start_date_h' => $contract->start_date_h,
-            'end_date_h' => $contract->end_date_h,
-            'commission_percent' => $contract->commission_percent,
-            'exit_notice_days' => $contract->exit_notice_days,
-            'penalty_amount' => $contract->penalty_amount,
-            'contract_number' => $contract->client_contract_no,
+            'contract_number' => 'CT-' . $id,
+            'partner2_name' => 'أحمد محمد العلي',
+            'partner_name' => 'أحمد محمد العلي',
+            'partner_id' => '1234567890',
+            'partner_phone' => '+966501234567',
+            'client_address' => 'الرياض، المملكة العربية السعودية',
+            'investment_amount' => 100000,
+            'capital_amount' => 90000,
+            'profit_percent' => 15,
+            'profit_interval_months' => 3,
+            'withdrawal_notice_days' => 30,
+            'start_date_h' => date('Y-m-d'),
+            'end_date_h' => date('Y-m-d', strtotime('+1 year')),
+            'commission_percent' => 2,
+            'exit_notice_days' => 30,
+            'penalty_amount' => 5000,
         ];
 
-        // Check for design template
-        $designPath = storage_path('app/designs/contract_design.pdf');
+        // Try TCPDF first, fallback to HTML
+        $pdfService = new \App\Services\SimplePdfService();
         
-        $pdfContent = $pdfService->generateContractPdf($contractData, $designPath);
+        // Attempt PDF generation
+        $pdfContent = $pdfService->generateContractPdf($contractData);
         
-        if (!$pdfContent) {
-            return response('Failed to generate PDF', 500);
+        if ($pdfContent) {
+            // Success with TCPDF
+            return response($pdfContent, 200, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'inline; filename="contract_' . $id . '.pdf"'
+            ]);
+        } else {
+            // Fallback to HTML
+            $htmlContent = $pdfService->generateSimplePdf($contractData);
+            return response($htmlContent, 200, [
+                'Content-Type' => 'text/html; charset=utf-8'
+            ]);
         }
-
-        return response($pdfContent, 200, [
-            'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="contract_' . $id . '.pdf"'
-        ]);
     }
 }

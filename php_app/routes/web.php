@@ -7,6 +7,9 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+// Test route for PDF generation (remove in production)
+Route::get('/test-pdf/{id?}', [ContractController::class, 'pdf'])->name('test.pdf');
+
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', function () { return view('dashboard'); })->name('dashboard');
 

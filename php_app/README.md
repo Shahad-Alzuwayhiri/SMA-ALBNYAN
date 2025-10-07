@@ -1,47 +1,85 @@
-Laravel migration scaffold (contractSama)
+# ContractSama - نظام إدارة العقود PHP
 
-This folder is a scaffold for migrating the Flask app to Laravel. It contains starter files and instructions — run the full Laravel project locally using Composer.
+## 📋 نظرة عامة
 
-Quick start (Windows PowerShell):
+تطبيق PHP متكامل لإدارة العقود مع:
+- نظام المصادقة والتصريحات
+- إنشاء وإدارة العقود
+- توليد PDF بالعربية
+- دعم كامل للـ RTL
+- قاعدة بيانات SQLite
 
-1. Install Composer if you don't have it: https://getcomposer.org/download/
-2. From repository root run (creates a new laravel project in php_app):
+## 🚀 التشغيل السريع
 
-    composer create-project laravel/laravel php_app
+1. تثبيت التبعيات:
+   ```bash
+   composer install
+   ```
 
-3. Change directory and install auth scaffold + packages:
+2. إعداد قاعدة البيانات:
+   ```bash
+   php setup_database.php
+   ```
 
-    cd php_app
-    composer require laravel/breeze --dev
-    php artisan breeze:install blade
-    composer require spatie/laravel-permission
-    composer require guzzlehttp/guzzle
-    npm install && npm run dev
+3. تشغيل الخادم:
+   ```bash
+   php -S localhost:8000 -t public
+   ```
 
-4. Configure `.env` (copy from `.env.example` below). Important env values:
+## 🏗️ البنية
 
-    DB_CONNECTION=sqlite
-    DB_DATABASE=database/database.sqlite
-    PDF_SERVICE_URL=http://127.0.0.1:8001
+```
+php_app/
+├── public/              # نقطة الدخول والملفات العامة
+├── templates/           # قوالب HTML
+├── models/             # نماذج البيانات
+├── controllers/        # معالجات المسارات
+├── services/           # خدمات التطبيق (PDF، إلخ)
+├── config/             # ملفات التكوين
+├── database/           # قاعدة البيانات و SQL
+└── storage/            # التخزين المؤقت والسجلات
+```
 
-5. Run migrations and generate app key:
+## ✨ الميزات
 
-    php artisan key:generate
-    touch database/database.sqlite
-    php artisan migrate
+- ✅ **PHP نقي** - لا توجد تبعيات خارجية معقدة
+- ✅ **نظام PDF متقدم** - دعم كامل للعربية مع TCPDF
+- ✅ **واجهة عربية حديثة** - مع دعم RTL
+- ✅ **قاعدة بيانات مدمجة** - SQLite للبساطة
+- ✅ **نظام مصادقة آمن** - sessions وتشفير كلمات المرور
+- ✅ **إدارة الملفات** - رفع وتخزين التوقيعات والمرفقات
 
-6. Start dev server:
+## 📁 الملفات الرئيسية
 
-    php artisan serve --host=127.0.0.1 --port=8000
+### الواجهة العامة (public/)
+- `index.php` - نقطة الدخول الرئيسية
+- `login.php` - صفحة تسجيل الدخول
+- `create_contract.php` - إنشاء عقد جديد
+- `contracts_list.php` - قائمة العقود
 
-Integration with Python PDF microservice:
-- The ContractController includes an example `pdf()` method that uses Guzzle to call the service endpoints `/extract_positions` and `/render_overlay` then returns/merges the resulting PDF.
-- Ensure the Python service is running (see `services/pdf_service/README.md`) and `PDF_SERVICE_URL` points to it.
+### النماذج (models/)
+- `User.php` - نموذج المستخدم
+- `Contract.php` - نموذج العقد
+- `DigitalSignature.php` - نموذج التوقيع الرقمي
 
-Next steps I will take after you confirm this scaffold:
-- Add auth (Breeze/Jetstream) and policies/middlewares mapping the Flask role behavior (manager/user).
-- Translate `app.py` routes into Controllers and Blade templates.
-- Port models to Eloquent and create migrations based on current `models.py`.
-- Implement PDF pipeline integration (call the Python microservice and merge overlay using a PHP PDF library or shell tools).
+### الخدمات (services/)
+- `SimplePdfService.php` - خدمة توليد PDF
 
-If you want this scaffold in a new repo instead of `php_app/` here, tell me and I'll adapt.
+## 🔧 التكوين
+
+يمكن تخصيص الإعدادات من خلال:
+- `config/config.php` - الإعدادات العامة
+- `config/database.php` - إعدادات قاعدة البيانات
+
+## 🧪 الاختبار
+
+- `test_pdf.php` - اختبار توليد PDF
+- `test_simple.php` - اختبار النظام الأساسي
+- `system_test.php` - اختبار شامل للنظام
+
+## 🚀 النشر
+
+راجع ملفات التوثيق:
+- `../DEPLOYMENT.md` - دليل النشر
+- `../PRODUCTION_SETUP.md` - إعداد الإنتاج
+- `../PROFESSIONAL_DEPLOYMENT.md` - النشر الاحترافي

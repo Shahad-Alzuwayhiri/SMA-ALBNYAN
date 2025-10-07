@@ -1,17 +1,27 @@
-# Laravel
-/php_app/vendor/
-/php_app/node_modules/
-/php_app/public/hot
-/php_app/public/storage
-/php_app/storage/*.key
-/php_app/.env
-/php_app/.env.backup
-/php_app/.phpunit.result.cache
-/php_app/docker-compose.override.yml
-/php_app/Homestead.json
-/php_app/Homestead.yaml
-/php_app/npm-debug.log*
-/php_app/yarn-error.log
+# Contract Sama - Render.com Deployment
+*.log
+.env
+.env.local
+.env.production
+node_modules/
+.DS_Store
+Thumbs.db
+*.tmp
+*.temp
+
+# PHP specific
+vendor/
+php_app/vendor/
+*.cache
+storage/logs/*.log
+
+# Database (keep structure, ignore data)
+php_app/database/*.db-journal
+php_app/database/backup_*
+
+# Uploads (in production these would be in cloud storage)
+php_app/storage/uploads/*
+!php_app/storage/uploads/.gitkeep
 
 # IDE
 .vscode/

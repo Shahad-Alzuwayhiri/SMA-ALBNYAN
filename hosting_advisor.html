@@ -1,0 +1,433 @@
+<?php
+/**
+ * دليل اختيار الاستضافة التفاعلي
+ * Contract Sama Hosting Advisor
+ */
+
+?>
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مساعد اختيار الاستضافة - Contract Sama</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .question {
+            margin-bottom: 30px;
+            padding: 25px;
+            border: 2px solid #eee;
+            border-radius: 10px;
+            background: #f9f9f9;
+        }
+        
+        .question h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        
+        .options {
+            display: grid;
+            gap: 10px;
+        }
+        
+        .option {
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+        }
+        
+        .option:hover {
+            border-color: #4CAF50;
+            background: #f0f8f0;
+        }
+        
+        .option.selected {
+            border-color: #4CAF50;
+            background: #e8f5e8;
+            font-weight: bold;
+        }
+        
+        .calculate-btn {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.2em;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+            transition: transform 0.3s ease;
+        }
+        
+        .calculate-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .result {
+            margin-top: 30px;
+            padding: 30px;
+            border-radius: 10px;
+            display: none;
+        }
+        
+        .result.show {
+            display: block;
+        }
+        
+        .result-basic {
+            background: linear-gradient(135deg, #81C784, #4CAF50);
+            color: white;
+        }
+        
+        .result-vps {
+            background: linear-gradient(135deg, #64B5F6, #2196F3);
+            color: white;
+        }
+        
+        .result-cloud {
+            background: linear-gradient(135deg, #FFB74D, #FF9800);
+            color: white;
+        }
+        
+        .result h2 {
+            font-size: 2em;
+            margin-bottom: 15px;
+        }
+        
+        .result-details {
+            background: rgba(255,255,255,0.2);
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        .provider {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+        }
+        
+        .icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="icon">🚀</div>
+            <h1>مساعد اختيار الاستضافة</h1>
+            <p>ساعدنا في اختيار أفضل استضافة لمشروع Contract Sama</p>
+        </div>
+        
+        <div class="content">
+            <form id="hostingForm">
+                <div class="question">
+                    <h3>🏢 ما هو حجم مؤسستك؟</h3>
+                    <div class="options">
+                        <label class="option">
+                            <input type="radio" name="company_size" value="small" hidden>
+                            شركة صغيرة (أقل من 50 عقد شهرياً)
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="company_size" value="medium" hidden>
+                            مؤسسة متوسطة (50-500 عقد شهرياً)
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="company_size" value="large" hidden>
+                            شركة كبيرة (أكثر من 500 عقد شهرياً)
+                        </label>
+                    </div>
+                </div>
+
+                <div class="question">
+                    <h3>👥 كم عدد المستخدمين المتزامنين المتوقع؟</h3>
+                    <div class="options">
+                        <label class="option">
+                            <input type="radio" name="users" value="few" hidden>
+                            أقل من 10 مستخدمين
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="users" value="medium" hidden>
+                            10-50 مستخدم
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="users" value="many" hidden>
+                            أكثر من 50 مستخدم
+                        </label>
+                    </div>
+                </div>
+
+                <div class="question">
+                    <h3>💰 ما هي ميزانيتك الشهرية؟</h3>
+                    <div class="options">
+                        <label class="option">
+                            <input type="radio" name="budget" value="low" hidden>
+                            أقل من $20/شهر
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="budget" value="medium" hidden>
+                            $20-50/شهر
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="budget" value="high" hidden>
+                            أكثر من $50/شهر
+                        </label>
+                    </div>
+                </div>
+
+                <div class="question">
+                    <h3>🔧 ما مستوى خبرتك التقنية؟</h3>
+                    <div class="options">
+                        <label class="option">
+                            <input type="radio" name="technical_level" value="beginner" hidden>
+                            مبتدئ (أفضل الحلول البسيطة)
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="technical_level" value="intermediate" hidden>
+                            متوسط (يمكنني التعامل مع الإعدادات)
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="technical_level" value="advanced" hidden>
+                            متقدم (أريد تحكم كامل)
+                        </label>
+                    </div>
+                </div>
+
+                <div class="question">
+                    <h3>⚡ ما أهمية الأداء والسرعة؟</h3>
+                    <div class="options">
+                        <label class="option">
+                            <input type="radio" name="performance" value="normal" hidden>
+                            عادي (أداء أساسي مقبول)
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="performance" value="important" hidden>
+                            مهم (أداء جيد مطلوب)
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="performance" value="critical" hidden>
+                            حرج (أداء عالي ضروري)
+                        </label>
+                    </div>
+                </div>
+
+                <button type="button" class="calculate-btn" onclick="calculateRecommendation()">
+                    احسب التوصية المناسبة 🎯
+                </button>
+            </form>
+
+            <!-- نتائج الاستضافة المشتركة -->
+            <div id="result-basic" class="result result-basic">
+                <div class="icon">🏠</div>
+                <h2>الاستضافة المشتركة</h2>
+                <p><strong>التوصية الأمثل لحالتك!</strong></p>
+                
+                <div class="result-details">
+                    <h3>لماذا هذا الخيار مناسب لك:</h3>
+                    <ul>
+                        <li>✅ سهولة الإعداد والاستخدام</li>
+                        <li>✅ تكلفة منخفضة ومناسبة للميزانية</li>
+                        <li>✅ دعم فني متوفر</li>
+                        <li>✅ مناسب لحجم الاستخدام المتوقع</li>
+                    </ul>
+                    
+                    <h3>الشركات المقترحة:</h3>
+                    <div class="provider">
+                        <strong>Hostinger - $8/شهر</strong><br>
+                        دعم عربي ممتاز + cPanel سهل الاستخدام
+                    </div>
+                    <div class="provider">
+                        <strong>SiteGround - $12/شهر</strong><br>
+                        أداء مستقر + نسخ احتياطية تلقائية
+                    </div>
+                </div>
+            </div>
+
+            <!-- نتائج VPS -->
+            <div id="result-vps" class="result result-vps">
+                <div class="icon">⚡</div>
+                <h2>الخادم الافتراضي VPS</h2>
+                <p><strong>التوصية المثلى لمتطلباتك!</strong></p>
+                
+                <div class="result-details">
+                    <h3>لماذا هذا الخيار مناسب لك:</h3>
+                    <ul>
+                        <li>✅ أداء عالي ومستقل</li>
+                        <li>✅ مرونة في التحكم والتخصيص</li>
+                        <li>✅ قابلية التوسع المستقبلي</li>
+                        <li>✅ أمان أعلى</li>
+                    </ul>
+                    
+                    <h3>الشركات المقترحة:</h3>
+                    <div class="provider">
+                        <strong>DigitalOcean - $20/شهر</strong><br>
+                        سهل الاستخدام + وثائق ممتازة
+                    </div>
+                    <div class="provider">
+                        <strong>Linode - $24/شهر</strong><br>
+                        أداء موثوق + دعم فني ممتاز
+                    </div>
+                </div>
+            </div>
+
+            <!-- نتائج السحابي -->
+            <div id="result-cloud" class="result result-cloud">
+                <div class="icon">☁️</div>
+                <h2>الاستضافة السحابية</h2>
+                <p><strong>الحل الاحترافي لمشروعك!</strong></p>
+                
+                <div class="result-details">
+                    <h3>لماذا هذا الخيار مناسب لك:</h3>
+                    <ul>
+                        <li>✅ تطوير تلقائي حسب الاستخدام</li>
+                        <li>✅ أداء عالي جداً ومتاح باستمرار</li>
+                        <li>✅ حماية وأمان متقدم</li>
+                        <li>✅ مراقبة وتحليلات شاملة</li>
+                    </ul>
+                    
+                    <h3>الشركات المقترحة:</h3>
+                    <div class="provider">
+                        <strong>AWS - $50+/شهر</strong><br>
+                        مرونة كاملة + خدمات متقدمة
+                    </div>
+                    <div class="provider">
+                        <strong>Google Cloud - $40+/شهر</strong><br>
+                        أدوات ذكية + تحليلات متقدمة
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Handle option selection
+        document.querySelectorAll('.option').forEach(option => {
+            option.addEventListener('click', function() {
+                const radio = this.querySelector('input[type="radio"]');
+                radio.checked = true;
+                
+                // Remove selected class from siblings
+                this.parentNode.querySelectorAll('.option').forEach(sibling => {
+                    sibling.classList.remove('selected');
+                });
+                
+                // Add selected class to this option
+                this.classList.add('selected');
+            });
+        });
+
+        function calculateRecommendation() {
+            const form = document.getElementById('hostingForm');
+            const formData = new FormData(form);
+            
+            // Check if all questions are answered
+            const questions = ['company_size', 'users', 'budget', 'technical_level', 'performance'];
+            for (let question of questions) {
+                if (!formData.get(question)) {
+                    alert('يرجى الإجابة على جميع الأسئلة');
+                    return;
+                }
+            }
+            
+            // Calculate score
+            let score = 0;
+            
+            // Company size
+            const companySize = formData.get('company_size');
+            if (companySize === 'large') score += 3;
+            else if (companySize === 'medium') score += 2;
+            else score += 1;
+            
+            // Users
+            const users = formData.get('users');
+            if (users === 'many') score += 3;
+            else if (users === 'medium') score += 2;
+            else score += 1;
+            
+            // Budget
+            const budget = formData.get('budget');
+            if (budget === 'high') score += 3;
+            else if (budget === 'medium') score += 2;
+            else score += 1;
+            
+            // Technical level
+            const technical = formData.get('technical_level');
+            if (technical === 'advanced') score += 2;
+            else if (technical === 'intermediate') score += 1;
+            
+            // Performance
+            const performance = formData.get('performance');
+            if (performance === 'critical') score += 3;
+            else if (performance === 'important') score += 2;
+            else score += 1;
+            
+            // Hide all results
+            document.querySelectorAll('.result').forEach(result => {
+                result.classList.remove('show');
+            });
+            
+            // Show appropriate result
+            if (score <= 8) {
+                document.getElementById('result-basic').classList.add('show');
+            } else if (score <= 12) {
+                document.getElementById('result-vps').classList.add('show');
+            } else {
+                document.getElementById('result-cloud').classList.add('show');
+            }
+            
+            // Scroll to result
+            setTimeout(() => {
+                document.querySelector('.result.show').scrollIntoView({
+                    behavior: 'smooth'
+                });
+            }, 300);
+        }
+    </script>
+</body>
+</html>

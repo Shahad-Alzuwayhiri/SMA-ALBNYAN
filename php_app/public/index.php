@@ -15,6 +15,11 @@ session_start();
 // Include helper functions (Laravel-like functions)
 require_once __DIR__ . '/../app/helpers.php';
 
+// Include new template helpers
+if (file_exists(__DIR__ . '/../includes/helpers.php')) {
+    require_once __DIR__ . '/../includes/helpers.php';
+}
+
 // Basic autoloader for our classes
 spl_autoload_register(function ($class) {
     // Convert namespace to file path
@@ -56,14 +61,17 @@ if (!function_exists('env')) {
 // Laravel-like helper functions
 if (!function_exists('view')) {
     function view($template, $data = []) {
-        $viewFile = __DIR__ . '/../resources/views/' . str_replace('.', '/', $template) . '.blade.php';
-        if (file_exists($viewFile)) {
+        // First try to load from templates directory (new system)
+        $templateFile = __DIR__ . '/../templates/' . str_replace('.', '/', $template) . '.php';
+        if (file_exists($templateFile)) {
             extract($data);
             ob_start();
-            include $viewFile;
+            include $templateFile;
             return ob_get_clean();
         }
-        throw new Exception("View [$template] not found.");
+        
+        // Fallback: Return error message for missing views
+        return "View [$template] not found in either templates or resources/views directories.";
     }
 }
 
@@ -110,8 +118,11 @@ if (!function_exists('route')) {
             'manager.dashboard' => '/manager-dashboard',
             'login' => '/login',
             'register' => '/register',
-            'profile' => '/profile',
+            'forgot-password' => '/forgot-password',
             'password.request' => '/forgot-password',
+            'reset-password' => '/reset-password',
+            'logout' => '/logout',
+            'profile' => '/profile',
             'notifications' => '/notifications',
             'contracts.index' => '/contracts',
             'contracts.create' => '/contracts/create',
@@ -216,86 +227,313 @@ if (file_exists($envFile)) {
     }
 }
 
-// Initialize dummy user session for testing
-if (!isset($_SESSION['user_id'])) {
-    $_SESSION['user_id'] = 1;
-    $_SESSION['user_name'] = 'أحمد محمد';
-    $_SESSION['user_email'] = 'admin@contractsama.com';
-    $_SESSION['user_role'] = 'manager';
-}
-
 // Simple routing
 $request_uri = $_SERVER['REQUEST_URI'];
 $path = parse_url($request_uri, PHP_URL_PATH);
 $method = $_SERVER['REQUEST_METHOD'];
 
+// Clean up path - remove leading/trailing slashes and normalize
+$path = trim($path, '/');
+
+// Handle VS Code browser requests and other parameters gracefully
+if (empty($path) || $path === 'index.php') {
+    $path = '';
+}
+
+// Debug information
+error_log("Request URI: " . $request_uri);
+error_log("Parsed Path: " . $path);
+error_log("Method: " . $method);
+
+// Global error handler for database issues
+function handleDatabaseError($error) {
+    $error_details = $error;
+    ob_start();
+    include __DIR__ . '/../templates/error_database.php';
+    echo ob_get_clean();
+    exit;
+}
+
 try {
     // Route handling
-    if ($path === '/') {
-        // Dashboard route
-        require_once __DIR__ . '/../app/Http/Controllers/DashboardController.php';
-        $controller = new \App\Http\Controllers\DashboardController();
+    if ($path === '' || $path === 'index') {
+        // صفحة الترحيب التي تشرح النظام
+        ob_start();
+        include __DIR__ . '/../templates/simple_welcome.php';
+        echo ob_get_clean();
+        exit;
+        
+    } elseif ($path === 'dashboard') {
+        require_once __DIR__ . '/../app/Http/Controllers/SimpleDashboardController.php';
+        $controller = new SimpleDashboardController();
         echo $controller->index();
         
-    } elseif ($path === '/manager-dashboard') {
-        require_once __DIR__ . '/../app/Http/Controllers/DashboardController.php';
-        $controller = new \App\Http\Controllers\DashboardController();
+    } elseif ($path === 'manager-dashboard') {
+        require_once __DIR__ . '/../app/Http/Controllers/SimpleDashboardController.php';
+        $controller = new SimpleDashboardController();
         echo $controller->managerDashboard();
         
-    } elseif ($path === '/login') {
+    } elseif ($path === 'login') {
+        require_once __DIR__ . '/../app/Http/Controllers/SimpleAuthController.php';
+        $controller = new SimpleAuthController();
         if ($method === 'GET') {
-            require_once __DIR__ . '/../app/Http/Controllers/AuthController.php';
-            $controller = new \App\Http\Controllers\AuthController();
             echo $controller->showLoginForm();
+        } elseif ($method === 'POST') {
+            $controller->login();
         }
         
-    } elseif ($path === '/register') {
+    } elseif ($path === 'register') {
+        require_once __DIR__ . '/../app/Http/Controllers/SimpleAuthController.php';
+        $controller = new SimpleAuthController();
         if ($method === 'GET') {
-            require_once __DIR__ . '/../app/Http/Controllers/AuthController.php';
-            $controller = new \App\Http\Controllers\AuthController();
             echo $controller->showRegisterForm();
+        } elseif ($method === 'POST') {
+            $controller->register();
         }
         
-    } elseif ($path === '/profile') {
-        require_once __DIR__ . '/../app/Http/Controllers/AuthController.php';
-        $controller = new \App\Http\Controllers\AuthController();
+    } elseif ($path === 'forgot-password') {
+        require_once __DIR__ . '/../app/Http/Controllers/SimpleAuthController.php';
+        $controller = new SimpleAuthController();
+        if ($method === 'GET') {
+            echo $controller->showForgotPasswordForm();
+        } elseif ($method === 'POST') {
+            $controller->forgotPassword();
+        }
+        
+    } elseif ($path === 'reset-password') {
+        require_once __DIR__ . '/../app/Http/Controllers/SimpleAuthController.php';
+        $controller = new SimpleAuthController();
+        if ($method === 'GET') {
+            echo $controller->showResetPasswordForm();
+        } elseif ($method === 'POST') {
+            $controller->resetPassword();
+        }
+        
+    } elseif ($path === 'logout') {
+        require_once __DIR__ . '/../app/Http/Controllers/SimpleAuthController.php';
+        $controller = new SimpleAuthController();
+        $controller->logout();
+        
+    } elseif ($path === 'profile') {
+        require_once __DIR__ . '/../app/Http/Controllers/SimpleAuthController.php';
+        $controller = new SimpleAuthController();
         echo $controller->profile();
         
+    } elseif ($path === 'employee-dashboard') {
+        // التحقق من صلاحيات الموظف
+        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'employee') {
+            $_SESSION['error'] = 'ليس لديك صلاحية للوصول لهذه الصفحة';
+            header('Location: /login');
+            exit;
+        }
+        require_once __DIR__ . '/../app/Http/Controllers/ContractController.php';
+        $controller = new ContractController();
+        echo $controller->showEmployeeDashboard();
+        
+    } elseif ($path === 'contracts') {
+        // صفحة العقود العامة
+        if (!isset($_SESSION['user_id'])) {
+            header('Location: /login');
+            exit;
+        }
+        
+        // توجيه المستخدم حسب دوره
+        if ($_SESSION['user_role'] === 'manager') {
+            require_once __DIR__ . '/../app/Http/Controllers/ContractController.php';
+            $controller = new ContractController();
+            echo $controller->showManagerDashboard();
+        } else {
+            require_once __DIR__ . '/../app/Http/Controllers/ContractController.php';
+            $controller = new ContractController();
+            echo $controller->showEmployeeDashboard();
+        }
+        
+    } elseif ($path === 'contracts/create') {
+        // صفحة إنشاء عقد جديد
+        if (!isset($_SESSION['user_id'])) {
+            header('Location: /login');
+            exit;
+        }
+        
+        require_once __DIR__ . '/../app/Http/Controllers/ContractController.php';
+        $controller = new ContractController();
+        if ($method === 'GET') {
+            include __DIR__ . '/create_contract.php';
+        } elseif ($method === 'POST') {
+            $controller->createContract();
+        }
+        
+    // API Routes for Contracts
+    } elseif ($path === '/api/contracts/manager' && $method === 'GET') {
+        require_once __DIR__ . '/../app/Http/Controllers/ContractController.php';
+        $controller = new ContractController();
+        $controller->getContractsForManager();
+        
+    } elseif ($path === '/api/contracts/employee' && $method === 'GET') {
+        require_once __DIR__ . '/../app/Http/Controllers/ContractController.php';
+        $controller = new ContractController();
+        $controller->getContractsForEmployee();
+        
+    } elseif ($path === '/api/contracts' && $method === 'POST') {
+        require_once __DIR__ . '/../app/Http/Controllers/ContractController.php';
+        $controller = new ContractController();
+        $controller->createContract();
+        
+    } elseif (preg_match('/^\/api\/contracts\/(\d+)$/', $path, $matches) && $method === 'PUT') {
+        $contractId = $matches[1];
+        require_once __DIR__ . '/../app/Http/Controllers/ContractController.php';
+        $controller = new ContractController();
+        $controller->updateContract($contractId);
+        
+    } elseif (preg_match('/^\/api\/contracts\/(\d+)\/submit-review$/', $path, $matches) && $method === 'POST') {
+        $contractId = $matches[1];
+        require_once __DIR__ . '/../app/Http/Controllers/ContractController.php';
+        $controller = new ContractController();
+        $controller->submitForReview($contractId);
+        
+    } elseif (preg_match('/^\/api\/contracts\/(\d+)\/sign$/', $path, $matches) && $method === 'POST') {
+        $contractId = $matches[1];
+        require_once __DIR__ . '/../app/Http/Controllers/SignatureController.php';
+        $controller = new SignatureController();
+        $controller->signContract($contractId);
+        
+    } elseif (preg_match('/^\/api\/contracts\/(\d+)\/reject$/', $path, $matches) && $method === 'POST') {
+        $contractId = $matches[1];
+        require_once __DIR__ . '/../app/Http/Controllers/SignatureController.php';
+        $controller = new SignatureController();
+        $controller->rejectContract($contractId);
+        
+    // API Routes for Employees
+    } elseif ($path === '/api/employees' && $method === 'GET') {
+        require_once __DIR__ . '/../app/Http/Controllers/EmployeeController.php';
+        $controller = new EmployeeController();
+        $controller->getAllEmployees();
+        
+    } elseif ($path === '/api/employees' && $method === 'POST') {
+        require_once __DIR__ . '/../app/Http/Controllers/EmployeeController.php';
+        $controller = new EmployeeController();
+        $controller->addEmployee();
+        
+    } elseif (preg_match('/^\/api\/employees\/(\d+)\/permissions$/', $path, $matches) && $method === 'PUT') {
+        $userId = $matches[1];
+        require_once __DIR__ . '/../app/Http/Controllers/EmployeeController.php';
+        $controller = new EmployeeController();
+        $controller->updatePermissions($userId);
+        
+    } elseif (preg_match('/^\/api\/employees\/(\d+)\/deactivate$/', $path, $matches) && $method === 'POST') {
+        $userId = $matches[1];
+        require_once __DIR__ . '/../app/Http/Controllers/EmployeeController.php';
+        $controller = new EmployeeController();
+        $controller->deactivateEmployee($userId);
+        
+    } elseif (preg_match('/^\/api\/employees\/(\d+)\/activate$/', $path, $matches) && $method === 'POST') {
+        $userId = $matches[1];
+        require_once __DIR__ . '/../app/Http/Controllers/EmployeeController.php';
+        $controller = new EmployeeController();
+        $controller->activateEmployee($userId);
+        
+    // API Routes for Signatures
+    } elseif ($path === '/api/signatures/upload' && $method === 'POST') {
+        require_once __DIR__ . '/../app/Http/Controllers/SignatureController.php';
+        $controller = new SignatureController();
+        $controller->uploadSignature();
+        
+    } elseif ($path === '/api/signatures/saved' && $method === 'GET') {
+        require_once __DIR__ . '/../app/Http/Controllers/SignatureController.php';
+        $controller = new SignatureController();
+        $controller->getSavedSignatures();
+        
+    } elseif ($path === '/api/signatures/pending' && $method === 'GET') {
+        require_once __DIR__ . '/../app/Http/Controllers/SignatureController.php';
+        $controller = new SignatureController();
+        $controller->getPendingSignatures();
+        
     } elseif ($path === '/notifications') {
-        require_once __DIR__ . '/../app/Http/Controllers/NotificationController.php';
-        $controller = new \App\Http\Controllers\NotificationController();
-        echo $controller->index();
+        include __DIR__ . '/notifications.php';
+        
+    } elseif ($path === '/employees') {
+        include __DIR__ . '/manage_employees.php';
         
     } elseif ($path === '/contracts') {
-        require_once __DIR__ . '/../app/Http/Controllers/ContractController.php';
-        $controller = new \App\Http\Controllers\ContractController();
+        require_once __DIR__ . '/../app/Http/Controllers/SimpleContractController.php';
+        $controller = new SimpleContractController();
         echo $controller->index();
         
     } elseif ($path === '/contracts/create') {
-        require_once __DIR__ . '/../app/Http/Controllers/ContractController.php';
-        $controller = new \App\Http\Controllers\ContractController();
-        echo $controller->create();
+        require_once __DIR__ . '/../app/Http/Controllers/SimpleContractController.php';
+        $controller = new SimpleContractController();
+        if ($method === 'GET') {
+            echo $controller->create();
+        } elseif ($method === 'POST') {
+            $controller->store();
+        }
+        
+    } elseif ($path === 'contracts/create-detailed') {
+        require_once __DIR__ . '/../controllers/DetailedContractController.php';
+        $controller = new DetailedContractController();
+        if ($method === 'GET') {
+            echo $controller->create();
+        } elseif ($method === 'POST') {
+            $controller->store();
+        }
+        
+    } elseif ($path === 'contracts/import-text') {
+        require_once __DIR__ . '/../controllers/DetailedContractController.php';
+        $controller = new DetailedContractController();
+        if ($method === 'GET') {
+            echo $controller->importFromText();
+        } elseif ($method === 'POST') {
+            $controller->importFromText();
+        }
+        
+    } elseif (preg_match('/^contracts\/view-detailed\/(\d+)$/', $path, $matches)) {
+        $id = $matches[1];
+        require_once __DIR__ . '/../controllers/DetailedContractController.php';
+        $controller = new DetailedContractController();
+        echo $controller->view($id);
+        
+    } elseif (preg_match('/^contracts\/update-detailed\/(\d+)$/', $path, $matches)) {
+        $id = $matches[1];
+        require_once __DIR__ . '/../controllers/DetailedContractController.php';
+        $controller = new DetailedContractController();
+        if ($method === 'POST') {
+            $controller->update($id);
+        } else {
+            header('Location: /contracts/view-detailed/' . $id);
+        }
+        
+    } elseif (preg_match('/^contracts\/delete-detailed\/(\d+)$/', $path, $matches)) {
+        $id = $matches[1];
+        require_once __DIR__ . '/../controllers/DetailedContractController.php';
+        $controller = new DetailedContractController();
+        $controller->delete($id);
+        
+    } elseif (preg_match('/^contracts\/export-pdf\/(\d+)$/', $path, $matches)) {
+        $id = $matches[1];
+        require_once __DIR__ . '/../controllers/DetailedContractController.php';
+        $controller = new DetailedContractController();
+        $controller->exportPdf($id);
         
     } elseif ($path === '/contracts-in-progress') {
-        require_once __DIR__ . '/../app/Http/Controllers/ContractController.php';
-        $controller = new \App\Http\Controllers\ContractController();
+        require_once __DIR__ . '/../app/Http/Controllers/SimpleContractController.php';
+        $controller = new SimpleContractController();
         echo $controller->inProgress();
         
     } elseif ($path === '/contracts-closed') {
-        require_once __DIR__ . '/../app/Http/Controllers/ContractController.php';
-        $controller = new \App\Http\Controllers\ContractController();
+        require_once __DIR__ . '/../app/Http/Controllers/SimpleContractController.php';
+        $controller = new SimpleContractController();
         echo $controller->closed();
         
     } elseif (preg_match('/^\/contracts\/(\d+)$/', $path, $matches)) {
         $id = $matches[1];
-        require_once __DIR__ . '/../app/Http/Controllers/ContractController.php';
-        $controller = new \App\Http\Controllers\ContractController();
+        require_once __DIR__ . '/../app/Http/Controllers/SimpleContractController.php';
+        $controller = new SimpleContractController();
         echo $controller->show($id);
         
     } elseif (preg_match('/^\/contracts\/(\d+)\/pdf$/', $path, $matches)) {
         $id = $matches[1];
-        require_once __DIR__ . '/../app/Http/Controllers/ContractController.php';
-        $controller = new \App\Http\Controllers\ContractController();
+        require_once __DIR__ . '/../app/Http/Controllers/SimpleContractController.php';
+        $controller = new SimpleContractController();
         echo $controller->pdf($id);
         
     } elseif (preg_match('/^\/test-pdf\/(\d+)$/', $path, $matches)) {
@@ -366,8 +604,12 @@ try {
             readfile($staticFile);
         } else {
             http_response_code(404);
-            echo "<h1>404 - الصفحة غير موجودة</h1>";
-            echo "<p><a href='/'>العودة للرئيسية</a></p>";
+            if (function_exists('renderPage')) {
+                echo renderPage('404', [], 'الصفحة غير موجودة - 404');
+            } else {
+                echo "<h1>404 - الصفحة غير موجودة</h1>";
+                echo "<p><a href='/'>العودة للرئيسية</a></p>";
+            }
         }
     }
 } catch (Exception $e) {

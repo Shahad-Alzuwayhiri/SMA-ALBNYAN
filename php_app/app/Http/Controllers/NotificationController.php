@@ -2,9 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-
-class NotificationController extends Controller
+class NotificationController
 {
     public function index()
     {
@@ -15,18 +13,25 @@ class NotificationController extends Controller
                 'title' => 'عقد جديد',
                 'message' => 'تم إنشاء عقد جديد يحتاج لموافقتك',
                 'read' => false,
-                'created_at' => now()->subHours(2)->format('Y-m-d H:i:s'),
+                'created_at' => date('Y-m-d H:i:s', strtotime('-2 hours')),
             ],
             [
                 'id' => 2,
                 'title' => 'تحديث العقد',
                 'message' => 'تم تعديل عقد #123 بنجاح',
                 'read' => true,
-                'created_at' => now()->subDays(1)->format('Y-m-d H:i:s'),
+                'created_at' => date('Y-m-d H:i:s', strtotime('-1 day')),
+            ],
+            [
+                'id' => 3,
+                'title' => 'موافقة مطلوبة',
+                'message' => 'عقد #456 بحاجة لموافقة المدير',
+                'read' => false,
+                'created_at' => date('Y-m-d H:i:s', strtotime('-4 hours')),
             ],
         ];
 
-        return view('notifications', compact('notifications'));
+        return view('notifications', ['notifications' => $notifications]);
     }
 
     public function markAsRead($id)

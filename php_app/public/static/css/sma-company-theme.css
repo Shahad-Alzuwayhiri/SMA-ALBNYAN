@@ -1,0 +1,331 @@
+/* Sma Albnyan Company Theme - Based on Logo Colors */
+:root {
+    --sma-primary: #1B3B5A;        /* Dark blue from logo */
+    --sma-secondary: #2E5A7A;      /* Medium blue */
+    --sma-accent: #5BB3C7;         /* Light blue/teal from logo */
+    --sma-light: #E8F4F8;          /* Very light blue */
+    --sma-white: #FFFFFF;
+    --sma-text: #2C3E50;
+    --sma-success: #27AE60;
+    --sma-warning: #F39C12;
+    --sma-danger: #E74C3C;
+    --sma-gradient: linear-gradient(135deg, var(--sma-primary) 0%, var(--sma-secondary) 50%, var(--sma-accent) 100%);
+}
+
+/* General Body Styling */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: var(--sma-light);
+    color: var(--sma-text);
+    direction: rtl;
+    text-align: right;
+}
+
+/* Header and Navigation */
+.main-header {
+    background: var(--sma-gradient);
+    color: var(--sma-white);
+    padding: 2rem 0;
+    box-shadow: 0 4px 15px rgba(27, 59, 90, 0.3);
+}
+
+.navbar {
+    background: var(--sma-primary) !important;
+}
+
+.navbar-brand, .nav-link {
+    color: var(--sma-white) !important;
+}
+
+.nav-link:hover {
+    color: var(--sma-accent) !important;
+}
+
+/* Cards and Containers */
+.card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 8px 25px rgba(27, 59, 90, 0.15);
+    background: var(--sma-white);
+}
+
+.card-header {
+    background: var(--sma-gradient);
+    color: var(--sma-white);
+    border-radius: 15px 15px 0 0 !important;
+    border: none;
+    padding: 1.5rem;
+}
+
+.card-body {
+    padding: 2rem;
+}
+
+/* Buttons */
+.btn-primary {
+    background: var(--sma-gradient);
+    border: none;
+    border-radius: 10px;
+    padding: 12px 25px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(27, 59, 90, 0.4);
+}
+
+.btn-secondary {
+    background: var(--sma-secondary);
+    border: none;
+    color: var(--sma-white);
+}
+
+.btn-info {
+    background: var(--sma-accent);
+    border: none;
+    color: var(--sma-white);
+}
+
+.btn-success {
+    background: var(--sma-success);
+    border: none;
+}
+
+.btn-warning {
+    background: var(--sma-warning);
+    border: none;
+}
+
+.btn-danger {
+    background: var(--sma-danger);
+    border: none;
+}
+
+/* Form Controls */
+.form-control, .form-select {
+    border: 2px solid #E8F4F8;
+    border-radius: 10px;
+    padding: 12px 15px;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--sma-accent);
+    box-shadow: 0 0 0 0.2rem rgba(91, 179, 199, 0.25);
+}
+
+.form-label {
+    color: var(--sma-primary);
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+/* Alerts */
+.alert-success {
+    background: rgba(39, 174, 96, 0.1);
+    border: 1px solid var(--sma-success);
+    color: var(--sma-success);
+}
+
+.alert-info {
+    background: rgba(91, 179, 199, 0.1);
+    border: 1px solid var(--sma-accent);
+    color: var(--sma-primary);
+}
+
+.alert-warning {
+    background: rgba(243, 156, 18, 0.1);
+    border: 1px solid var(--sma-warning);
+    color: #D68910;
+}
+
+.alert-danger {
+    background: rgba(231, 76, 60, 0.1);
+    border: 1px solid var(--sma-danger);
+    color: var(--sma-danger);
+}
+
+/* Statistics Cards */
+.stats-card {
+    background: var(--sma-white);
+    border-radius: 15px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 8px 25px rgba(27, 59, 90, 0.1);
+    border-left: 5px solid var(--sma-accent);
+    transition: all 0.3s ease;
+}
+
+.stats-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(27, 59, 90, 0.2);
+}
+
+.stats-card .icon {
+    color: var(--sma-accent);
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.stats-card h3 {
+    color: var(--sma-primary);
+    font-weight: 700;
+    font-size: 2.5rem;
+}
+
+.stats-card p {
+    color: var(--sma-text);
+    margin-bottom: 0;
+}
+
+/* Tables */
+.table {
+    background: var(--sma-white);
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 8px 25px rgba(27, 59, 90, 0.1);
+}
+
+.table thead {
+    background: var(--sma-gradient);
+    color: var(--sma-white);
+}
+
+.table tbody tr:hover {
+    background: var(--sma-light);
+}
+
+/* Badges */
+.badge {
+    border-radius: 20px;
+    padding: 8px 15px;
+    font-weight: 600;
+}
+
+.badge.bg-primary {
+    background: var(--sma-primary) !important;
+}
+
+.badge.bg-secondary {
+    background: var(--sma-secondary) !important;
+}
+
+.badge.bg-info {
+    background: var(--sma-accent) !important;
+}
+
+/* Company Logo Watermark */
+.company-watermark {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    opacity: 0.1;
+    z-index: -1;
+    width: 200px;
+    height: auto;
+}
+
+/* Print Styles for PDF */
+@media print {
+    .company-watermark {
+        position: absolute;
+        bottom: 50px;
+        right: 50px;
+        opacity: 0.3;
+        z-index: 1000;
+    }
+    
+    .main-header {
+        background: var(--sma-gradient) !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    
+    .card {
+        box-shadow: none;
+        border: 1px solid #ddd;
+    }
+}
+
+/* Amendment Specific Styles */
+.amendment-form {
+    border: 3px solid var(--sma-warning);
+    background: rgba(243, 156, 18, 0.05);
+}
+
+.amendment-badge {
+    background: var(--sma-warning) !important;
+    color: white;
+    font-size: 1.1rem;
+    padding: 10px 20px;
+}
+
+/* Net Profit Highlight */
+.net-profit-field {
+    background: rgba(39, 174, 96, 0.05);
+    border: 2px dashed var(--sma-success);
+    border-radius: 10px;
+    padding: 15px;
+}
+
+.net-profit-field .form-label {
+    color: var(--sma-success);
+    font-weight: 700;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .main-header {
+        padding: 1rem 0;
+    }
+    
+    .stats-card {
+        text-align: center;
+        padding: 1.5rem;
+    }
+    
+    .card-body {
+        padding: 1.5rem;
+    }
+}
+
+/* Animation Classes */
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.slide-in {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from { transform: translateX(-20px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+/* Company Identity Elements */
+.sma-logo {
+    max-height: 60px;
+    width: auto;
+}
+
+.company-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--sma-primary);
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.company-subtitle {
+    color: var(--sma-secondary);
+    text-align: center;
+    margin-bottom: 3rem;
+}

@@ -2,17 +2,16 @@
 
 namespace App\Console;
 
-use Illuminate\Console\Scheduling\Schedule;
-use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
-
-class Kernel extends ConsoleKernel
+// Simple Console Kernel for standalone PHP (no Laravel)
+class Kernel
 {
     /**
      * Define the application's command schedule.
      */
-    protected function schedule(Schedule $schedule)
+    protected function schedule()
     {
-        // $schedule->command('inspire')->hourly();
+        // Simple scheduling - can be implemented later if needed
+        // For now, just a placeholder
     }
 
     /**
@@ -20,8 +19,7 @@ class Kernel extends ConsoleKernel
      */
     protected function commands()
     {
-        $this->load(__DIR__.'/Commands');
-
-        require base_path('routes/console.php');
+        // Simple command registration - can be implemented later if needed
+        // For now, just a placeholder
     }
 }

@@ -6,119 +6,153 @@ class AuthController
 {
     public function showLoginForm()
     {
-        return view('auth.login');
+        // Clear previous errors
+        unset($_SESSION['errors']);
+        
+        // Include and output the login template
+        ob_start();
+        include dirname(__DIR__, 3) . '/templates/login.php';
+        return ob_get_clean();
     }
 
-    public function login(Request $request)
+    public function login()
     {
-        $credentials = $request->validate([
-            'identity' => 'required|string',
-            'password' => 'required|string',
-        ]);
-
-        // Try to login with email or phone
-        $login_field = filter_var($credentials['identity'], FILTER_VALIDATE_EMAIL) ? 'email' : 'phone';
+        $identity = $_POST['identity'] ?? '';
+        $password = $_POST['password'] ?? '';
         
-        if (Auth::attempt([$login_field => $credentials['identity'], 'password' => $credentials['password']], $request->filled('remember'))) {
-            $request->session()->regenerate();
+        // Simple demo authentication - replace with real DB check
+        if ($identity && $password) {
+            // Demo users
+            $users = [
+                'manager@sama.com' => ['name' => 'مدير النظام', 'role' => 'manager', 'password' => '123456'],
+                'employee@sama.com' => ['name' => 'موظف', 'role' => 'employee', 'password' => '123456'],
+                'ahmed@sama.com' => ['name' => 'أحمد محمد', 'role' => 'employee', 'password' => '123456'],
+            ];
             
-            $user = Auth::user();
-            if ($user->isManager()) {
-                return redirect()->route('manager.dashboard');
+            if (isset($users[$identity]) && $users[$identity]['password'] === $password) {
+                // Set session
+                $_SESSION['user_id'] = 1;
+                $_SESSION['user_name'] = $users[$identity]['name'];
+                $_SESSION['user_email'] = $identity;
+                $_SESSION['user_role'] = $users[$identity]['role'];
+                
+                // Clear errors
+                unset($_SESSION['errors']);
+                
+                // Redirect based on role
+                if ($_SESSION['user_role'] === 'manager') {
+                    header('Location: /manager-dashboard');
+                } else {
+                    header('Location: /dashboard');
+                }
+                exit;
             }
-            
-            return redirect()->route('dashboard');
         }
-
-        return back()->withErrors([
-            'identity' => 'البيانات المدخلة غير صحيحة.',
-        ])->onlyInput('identity');
+        
+        $_SESSION['errors'] = ['البيانات المدخلة غير صحيحة. جرب: manager@sama.com / 123456'];
+        header('Location: /login');
+        exit;
     }
 
     public function showRegisterForm()
     {
+        unset($_SESSION['errors']);
         return view('auth.register');
     }
 
-    public function register(Request $request)
+    public function register()
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
-            'invite_code' => 'nullable|string',
-        ]);
-
-        if ($validator->fails()) {
-            return redirect('register')
-                        ->withErrors($validator)
-                        ->withInput();
-        }
-
-        $role = 'employee'; // Default role
+        $name = $_POST['name'] ?? '';
+        $email = $_POST['email'] ?? '';
+        $password = $_POST['password'] ?? '';
+        $password_confirmation = $_POST['password_confirmation'] ?? '';
+        $invite_code = $_POST['invite_code'] ?? '';
         
-        // Check invite code for manager role
-        if ($request->filled('invite_code') && $request->invite_code === 'MANAGER2025') {
-            $role = 'manager';
+        // Simple validation
+        $errors = [];
+        if (!$name) $errors[] = 'الاسم مطلوب';
+        if (!$email || !filter_var($email, FILTER_VALIDATE_EMAIL)) $errors[] = 'البريد الإلكتروني غير صحيح';
+        if (!$password || strlen($password) < 6) $errors[] = 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
+        if ($password !== $password_confirmation) $errors[] = 'كلمة المرور غير متطابقة';
+        
+        if ($errors) {
+            $_SESSION['errors'] = $errors;
+            header('Location: /register');
+            exit;
         }
-
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => $role,
-        ]);
-
-        Auth::login($user);
-
-        if ($user->isManager()) {
-            return redirect()->route('manager.dashboard');
+        
+        // Determine role
+        $role = ($invite_code === 'MANAGER2025') ? 'manager' : 'employee';
+        
+        // Auto login after registration
+        $_SESSION['user_id'] = rand(2, 1000);
+        $_SESSION['user_name'] = $name;
+        $_SESSION['user_email'] = $email;
+        $_SESSION['user_role'] = $role;
+        
+        // Redirect based on role
+        if ($role === 'manager') {
+            header('Location: /manager-dashboard');
+        } else {
+            header('Location: /dashboard');
         }
-
-        return redirect()->route('dashboard');
+        exit;
     }
 
-    public function logout(Request $request)
+    public function logout()
     {
-        Auth::logout();
-
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
-
-        return redirect()->route('login');
+        // Clear all session data
+        session_destroy();
+        session_start(); // Restart for flash messages
+        
+        $_SESSION['success'] = 'تم تسجيل الخروج بنجاح';
+        header('Location: /login');
+        exit;
     }
 
     public function profile()
     {
+        // Check if user is logged in
+        if (!isset($_SESSION['user_id'])) {
+            header('Location: /login');
+            exit;
+        }
+        
+        unset($_SESSION['errors']);
         return view('auth.profile');
     }
 
-    public function updateProfile(Request $request)
+    public function updateProfile()
     {
-        $user = Auth::user();
-        
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
-            'password' => 'nullable|string|min:8|confirmed',
-        ]);
-
-        if ($validator->fails()) {
-            return redirect()->route('profile')
-                        ->withErrors($validator)
-                        ->withInput();
-        }
-
-        $user->name = $request->name;
-        $user->email = $request->email;
-        
-        if ($request->filled('password')) {
-            $user->password = Hash::make($request->password);
+        if (!isset($_SESSION['user_id'])) {
+            header('Location: /login');
+            exit;
         }
         
-        $user->save();
-
-        return redirect()->route('profile')->with('success', 'تم تحديث الملف الشخصي بنجاح');
+        $name = $_POST['name'] ?? '';
+        $email = $_POST['email'] ?? '';
+        $password = $_POST['password'] ?? '';
+        $password_confirmation = $_POST['password_confirmation'] ?? '';
+        
+        $errors = [];
+        if (!$name) $errors[] = 'الاسم مطلوب';
+        if (!$email || !filter_var($email, FILTER_VALIDATE_EMAIL)) $errors[] = 'البريد الإلكتروني غير صحيح';
+        if ($password && strlen($password) < 6) $errors[] = 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
+        if ($password && $password !== $password_confirmation) $errors[] = 'كلمة المرور غير متطابقة';
+        
+        if ($errors) {
+            $_SESSION['errors'] = $errors;
+            header('Location: /profile');
+            exit;
+        }
+        
+        // Update session
+        $_SESSION['user_name'] = $name;
+        $_SESSION['user_email'] = $email;
+        
+        $_SESSION['success'] = 'تم تحديث الملف الشخصي بنجاح';
+        header('Location: /profile');
+        exit;
     }
 
     public function showForgotForm()
@@ -126,10 +160,11 @@ class AuthController
         return view('auth.forgot-password');
     }
 
-    public function sendResetEmail(Request $request)
+    public function sendResetEmail()
     {
-        // Placeholder - implement password reset logic
-        return back()->with('status', 'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني');
+        $_SESSION['success'] = 'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني';
+        header('Location: /forgot-password');
+        exit;
     }
 
     public function showResetForm($token)
@@ -137,9 +172,10 @@ class AuthController
         return view('auth.reset-password', ['token' => $token]);
     }
 
-    public function resetPassword(Request $request)
+    public function resetPassword()
     {
-        // Placeholder - implement password reset logic
-        return redirect()->route('login')->with('status', 'تم تغيير كلمة المرور بنجاح');
+        $_SESSION['success'] = 'تم تغيير كلمة المرور بنجاح';
+        header('Location: /login');
+        exit;
     }
 }

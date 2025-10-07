@@ -1,0 +1,26 @@
+{
+    "name": "contract-sama/root",
+    "description": "Contract Sama - PHP Project Root",
+    "type": "project",
+    "require": {
+        "php": ">=8.1"
+    },
+    "scripts": {
+        "post-install-cmd": [
+            "cd php_app && composer install --no-dev --optimize-autoloader"
+        ],
+        "build": [
+            "chmod +x build.sh",
+            "./build.sh"
+        ],
+        "start": [
+            "chmod +x start.sh", 
+            "./start.sh"
+        ]
+    },
+    "config": {
+        "platform": {
+            "php": "8.1"
+        }
+    }
+}

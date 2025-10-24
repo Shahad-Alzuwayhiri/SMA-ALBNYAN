@@ -1,0 +1,18 @@
+# Deny access to log files
+# منع الوصول لملفات السجلات
+
+Order deny,allow
+Deny from all
+
+# Additional security headers
+<Files "*">
+    Deny from all
+</Files>
+
+# Prevent directory browsing
+Options -Indexes
+
+# Prevent access to specific file types
+<FilesMatch "\.(log|txt)$">
+    Deny from all
+</FilesMatch>

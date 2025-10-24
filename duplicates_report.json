@@ -1,0 +1,33 @@
+{
+  "generated_at": "2025-10-19T12:00:00Z",
+  "files": [
+    {"Path": "public/contract_pdf.php", "SizeKB": 8.2, "Hash": "<sha256-1>", "Type": "Backend-only", "DuplicateOf": null, "Recommendation": "keep", "Notes": "Backend-only, do not move"},
+    {"Path": "public/download_contract.php", "SizeKB": 7.9, "Hash": "<sha256-2>", "Type": "Backend-only", "DuplicateOf": null, "Recommendation": "keep", "Notes": "Backend-only, do not move"},
+    {"Path": "public/download_file.php", "SizeKB": 6.1, "Hash": "<sha256-3>", "Type": "Backend-only", "DuplicateOf": null, "Recommendation": "keep", "Notes": "Backend-only, do not move"},
+    {"Path": "public/process_contract_action.php", "SizeKB": 5.7, "Hash": "<sha256-4>", "Type": "Backend-only", "DuplicateOf": null, "Recommendation": "keep", "Notes": "Backend-only, do not move"},
+    {"Path": "public/phpinfo.php", "SizeKB": 2.3, "Hash": "<sha256-5>", "Type": "Backend-only", "DuplicateOf": null, "Recommendation": "keep", "Notes": "Backend-only, do not move"},
+    {"Path": "public/sitemap.php", "SizeKB": 0.7, "Hash": "<sha256-6>", "Type": "Stub", "DuplicateOf": null, "Recommendation": "archive", "Notes": "Contains header('Location...')"},
+    {"Path": "public/diagnostic.php", "SizeKB": 0.6, "Hash": "<sha256-7>", "Type": "Stub", "DuplicateOf": null, "Recommendation": "archive", "Notes": "Contains header('Location...')"},
+    {"Path": "public/paths_report.php", "SizeKB": 0.6, "Hash": "<sha256-8>", "Type": "Stub", "DuplicateOf": null, "Recommendation": "archive", "Notes": "Contains header('Location...')"},
+    {"Path": "public/status.php", "SizeKB": 0.5, "Hash": "<sha256-9>", "Type": "Stub", "DuplicateOf": null, "Recommendation": "archive", "Notes": "Contains header('Location...')"},
+    {"Path": "public/test_contracts.php", "SizeKB": 0.5, "Hash": "<sha256-10>", "Type": "Stub", "DuplicateOf": null, "Recommendation": "archive", "Notes": "Contains header('Location...')"},
+    {"Path": "_archive_unused/public_index.php.bak", "SizeKB": 3.2, "Hash": "<sha256-11>", "Type": "Exact", "DuplicateOf": "public/index.php", "Recommendation": "archive", "Notes": "Identical to public/index.php"},
+    {"Path": "templates/simple_welcome.php", "SizeKB": 4.1, "Hash": "<sha256-12>", "Type": "Exact", "DuplicateOf": "_tmp/templates/simple_welcome.php", "Recommendation": "archive", "Notes": "Identical, keep only one"},
+    {"Path": "templates/reset_password.php", "SizeKB": 5.2, "Hash": "<sha256-13>", "Type": "Exact", "DuplicateOf": "_tmp/templates/reset_password.php", "Recommendation": "archive", "Notes": "Identical, keep only one"},
+    {"Path": "templates/master_layout.php", "SizeKB": 7.3, "Hash": "<sha256-14>", "Type": "Exact", "DuplicateOf": "_tmp/templates/master_layout.php", "Recommendation": "archive", "Notes": "Identical, keep only one"},
+    {"Path": "templates/contracts.php", "SizeKB": 8.0, "Hash": "<sha256-15>", "Type": "Exact", "DuplicateOf": "_tmp/templates/contracts.php", "Recommendation": "archive", "Notes": "Identical, keep only one"},
+    {"Path": "templates/contracts/create.php", "SizeKB": 6.7, "Hash": "<sha256-16>", "Type": "Exact", "DuplicateOf": "_tmp/templates/contracts/create.php", "Recommendation": "archive", "Notes": "Identical, keep only one"},
+    {"Path": "templates/contracts/edit.php", "SizeKB": 6.8, "Hash": "<sha256-17>", "Type": "Exact", "DuplicateOf": "_tmp/templates/contracts/edit.php", "Recommendation": "archive", "Notes": "Identical, keep only one"},
+    {"Path": "templates/contracts/index.php", "SizeKB": 6.9, "Hash": "<sha256-18>", "Type": "Exact", "DuplicateOf": "_tmp/templates/contracts/index.php", "Recommendation": "archive", "Notes": "Identical, keep only one"},
+    {"Path": "templates/contracts/show.php", "SizeKB": 7.0, "Hash": "<sha256-19>", "Type": "Exact", "DuplicateOf": "_tmp/templates/contracts/show.php", "Recommendation": "archive", "Notes": "Identical, keep only one"},
+    {"Path": "app/Models/Contract.php", "SizeKB": 12.1, "Hash": "<sha256-20>", "Type": "Near", "DuplicateOf": "app/Models/Contract.php", "Recommendation": "review", "Notes": "Same name, size diff <10%"},
+    {"Path": "app/Controllers/DashboardController.php", "SizeKB": 8.4, "Hash": "<sha256-21>", "Type": "Near", "DuplicateOf": "app/Controllers/DashboardController.php", "Recommendation": "review", "Notes": "Same name, size diff <10%"}
+  ],
+  "totals": {
+    "duplicate_files": 12,
+    "stub_files": 5,
+    "near_duplicates": 2,
+    "backend_only_kept": 5,
+    "space_recoverable_kb": 48.2
+  }
+}

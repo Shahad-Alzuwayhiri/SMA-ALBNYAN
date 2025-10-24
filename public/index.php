@@ -1,0 +1,112 @@
+<?php
+// Temporary: enable error display for diagnosis. Remove after fixing.
+ini_set('display_errors', '1');
+error_reporting(E_ALL);
+
+/**
+ * Single Entry Point - Modern PHP Application
+ * نقطة الدخول الوحيدة - تطبيق PHP حديث
+ * 
+ * SMA ALBNYAN Contract Management System
+ * نظام إدارة العقود - شركة سما البنيان التجارية
+ */
+
+// Load Composer autoloader
+require __DIR__ . '/../vendor/autoload.php';
+
+// Load and initialize debug configuration
+require __DIR__ . '/../config/debug.php';
+DebugConfig::init();
+
+// Set timezone
+date_default_timezone_set('Asia/Riyadh');
+
+// Security Headers
+header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: DENY');
+header('X-XSS-Protection: 1; mode=block');
+
+// Start output buffering
+ob_start();
+
+// Start performance monitoring
+if (class_exists('App\Helpers\PerformanceMonitor')) {
+    App\Helpers\PerformanceMonitor::start();
+    App\Helpers\PerformanceMonitor::mark('Application Start');
+}
+
+try {
+    // Load configuration
+    $config = require __DIR__ . '/../config/app.php';
+    
+    // Start session if not already started
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    
+// Normalize REQUEST_URI and SCRIPT_NAME to remove an incidental '/public' segment
+// This makes the router work whether the project is accessed at
+// http://host/ContractSama/ or http://host/ContractSama/public/ (dev convenience).
+if (!empty($_SERVER['REQUEST_URI'])) {
+    $req = $_SERVER['REQUEST_URI'];
+    $new = preg_replace('#/public#', '', $req, 1);
+    if ($new !== $req) {
+        $_SERVER['REQUEST_URI'] = $new;
+    }
+}
+if (!empty($_SERVER['SCRIPT_NAME'])) {
+    $sn = $_SERVER['SCRIPT_NAME'];
+    $newSn = preg_replace('#/public#', '', $sn, 1);
+    if ($newSn !== $sn) {
+        $_SERVER['SCRIPT_NAME'] = $newSn;
+    }
+}
+
+// Dispatch routes: include the routes file which performs controller dispatch.
+$routesFile = __DIR__ . '/../routes/web.php';
+if (file_exists($routesFile)) {
+    require $routesFile;
+} else {
+    echo "<h1>Configuration error</h1><p>Routes file missing: " . htmlspecialchars($routesFile) . "</p>";
+}
+
+} catch (Exception $e) {
+    ?>
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>خطأ في التطبيق</title>
+        <style>
+            body { font-family: monospace; padding: 20px; background: #1e1e1e; color: #fff; }
+            .error { background: #2d2d2d; padding: 20px; border-radius: 8px; border-left: 4px solid #f44336; }
+            .error h1 { color: #f44336; margin-top: 0; }
+            .error-details { background: #3c3c3c; padding: 15px; margin: 15px 0; border-radius: 4px; }
+            pre { background: #2d2d2d; padding: 15px; overflow-x: auto; border-radius: 4px; }
+        </style>
+    </head>
+    <body>
+        <div class="error">
+            <h1>🚨 خطأ في التطبيق (Development Mode)</h1>
+            <div class="error-details">
+                <p><strong>الرسالة:</strong> <?php echo htmlspecialchars($e->getMessage()); ?></p>
+                <p><strong>الملف:</strong> <?php echo htmlspecialchars($e->getFile()); ?></p>
+                <p><strong>السطر:</strong> <?php echo $e->getLine(); ?></p>
+            </div>
+            <h3>Stack Trace:</h3>
+            <pre><?php echo htmlspecialchars($e->getTraceAsString()); ?></pre>
+        </div>
+    </body>
+    </html>
+    <?php
+}
+
+// End output buffering and send response
+ob_end_flush();
+
+// Display performance report in debug mode
+if (class_exists('App\Helpers\PerformanceMonitor')) {
+    App\Helpers\PerformanceMonitor::mark('Application End');
+    App\Helpers\PerformanceMonitor::displayReport();
+}
+// end of file

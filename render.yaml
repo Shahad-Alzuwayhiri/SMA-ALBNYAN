@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: contract-sama
+    runtime: php
+    plan: free
+    buildCommand: chmod +x build.sh && ./build.sh
+    startCommand: chmod +x start.sh && ./start.sh
+    healthCheckPath: /
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: DB_CONNECTION
+        value: sqlite
+      - key: DB_DATABASE
+        value: database/contracts.db
+      - key: SESSION_DRIVER
+        value: file
+      - key: APP_TIMEZONE
+        value: Asia/Riyadh
+      - key: RENDER
+        value: true

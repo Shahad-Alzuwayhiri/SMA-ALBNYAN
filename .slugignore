@@ -1,0 +1,15 @@
+# Render.com ignore file
+*.md
+README*
+SETUP*
+DEPLOYMENT*
+PRODUCTION*
+.git/
+.gitignore
+*.bat
+*.ps1
+node_modules/
+static/
+temp/
+logs/
+*.log

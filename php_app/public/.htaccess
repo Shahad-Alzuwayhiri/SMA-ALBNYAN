@@ -1,0 +1,32 @@
+# Contract Sama Public Directory
+RewriteEngine On
+
+# Handle Pretty URLs
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php [L,QSA]
+
+# Security for PHP files
+<Files "*.php">
+    # Allow only index.php and login.php
+    <FilesMatch "^(index|login|logout|create_contract|contracts_list|view_contract|edit_contract|delete_contract|download_contract|employee_dashboard|manager_dashboard|profile|notifications|reports|quick_login|welcome|offer_contract|renewal_contract|submit_for_review|process_contract_action|manage_employees|company_updates_summary|test_pdf|test_simple|simple_test|system_test|db_test|info)\.php$">
+        Order allow,deny
+        Allow from all
+    </FilesMatch>
+    
+    # Deny all other PHP files
+    Order allow,deny
+    Deny from all
+</Files>
+
+# Block access to setup and test files in production
+<FilesMatch "^(setup_|test_|check_|fix_|upgrade_)">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Allow static assets
+<FilesMatch "\.(css|js|png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot|ico|pdf)$">
+    Order allow,deny
+    Allow from all
+</FilesMatch>

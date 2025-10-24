@@ -1,0 +1,48 @@
+# Contract Sama - Render.com Deployment
+*.log
+.env
+.env.local
+.env.production
+node_modules/
+.DS_Store
+Thumbs.db
+*.tmp
+*.temp
+
+# PHP specific
+vendor/
+php_app/vendor/
+*.cache
+storage/logs/*.log
+
+# Database (keep structure, ignore data)
+php_app/database/*.db-journal
+php_app/database/backup_*
+
+# Uploads (in production these would be in cloud storage)
+php_app/storage/uploads/*
+!php_app/storage/uploads/.gitkeep
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Database
+*.sqlite
+*.sqlite3
+*.db
+
+# Temporary files
+tmp_*.pdf
+outputs/
+*.tmp

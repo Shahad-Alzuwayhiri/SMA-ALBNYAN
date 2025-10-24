@@ -1,0 +1,30 @@
+{
+  "name": "contract-sama",
+  "version": "1.0.0",
+  "description": "Contract Management System - Ready for Render.com deployment",
+  "scripts": {
+    "build": "chmod +x build.sh && ./build.sh",
+    "start": "chmod +x start.sh && ./start.sh",
+    "dev": "cd php_app && php -S localhost:8000 -t public/",
+    "test": "cd php_app && php test_simple.php"
+  },
+  "engines": {
+    "node": "18.x"
+  },
+  "buildpacks": [
+    "heroku/php"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Shahad-Alzuwayhiri/ContractSama.git"
+  },
+  "keywords": [
+    "contract",
+    "management",
+    "php",
+    "render",
+    "arabic"
+  ],
+  "author": "Contract Sama Team",
+  "license": "MIT"
+}

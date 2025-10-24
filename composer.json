@@ -1,53 +1,26 @@
 {
-    "name": "contract-sama/app",
-    "description": "Contract Management System - Pure PHP Application",
+    "name": "contract-sama/root",
+    "description": "Contract Sama - PHP Project Root",
     "type": "project",
-    "license": "MIT",
-    "keywords": ["contract", "management", "php", "pdf", "arabic"],
     "require": {
-        "php": "^8.1",
-        "ext-pdo": "*",
-        "ext-mbstring": "*",
-        "ext-json": "*",
-        "ext-sqlite3": "*"
-    },
-    "autoload": {
-        "psr-4": {
-            "App\\": "app/"
-        },
-        "files": [
-            "app/Helpers/GlobalFunctions.php"
-        ]
+        "php": ">=8.1"
     },
     "scripts": {
         "post-install-cmd": [
-            "php setup_database.php"
+            "cd php_app && composer install --no-dev --optimize-autoloader"
         ],
-        "deploy": [
-            "composer install --no-dev --optimize-autoloader",
-            "php upgrade_system.php"
+        "build": [
+            "chmod +x build.sh",
+            "./build.sh"
         ],
-        "test": [
-            "php test_simple.php",
-            "php system_test.php"
+        "start": [
+            "chmod +x start.sh",
+            "./start.sh"
         ]
     },
     "config": {
-        "optimize-autoloader": true,
-        "preferred-install": "dist",
-        "sort-packages": true,
         "platform": {
             "php": "8.1"
-        }
-    },
-    "extra": {
-        "production": {
-            "exclude-files": [
-                "test_*.php",
-                "setup_*.php",
-                "check_*.php",
-                "fix_*.php"
-            ]
         }
     }
 }

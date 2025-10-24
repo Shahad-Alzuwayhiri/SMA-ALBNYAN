@@ -1,0 +1,121 @@
+.box {
+  position: relative;
+  width: 100%;
+  height: 61px;
+  direction: rtl;
+}
+
+.box .group {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 61px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1500; /* above sidebar (1100) */
+  padding: 0 12px;
+}
+
+.box .rectangle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 61px;
+  background-color: #3c4c62;
+}
+
+.box .text-wrapper {
+  font-family: "Alef-Bold", Helvetica, sans-serif;
+  font-weight: 700;
+  color: #ffffff;
+  font-size: 17px;
+  text-align: center;
+  line-height: normal;
+  position: relative;
+  margin: 0 auto;
+}
+
+.box .breadcrumb {
+  position: absolute;
+  top: 11px;
+  left: 18px;
+  width: 260px;
+}
+
+.box .menu {
+  width: 100%;
+  height: 40px;
+  display: flex;
+}
+
+.box .input-withaddons {
+  display: flex;
+  width: 100%;
+  position: relative;
+  height: 39.5px;
+  align-items: center;
+  background-color: #ffffff;
+  border-radius: 15px;
+  overflow: hidden;
+  border: 0.5px solid;
+  border-color: #e2e8f0;
+  padding: 0 6px;
+}
+
+.box .auto-added-frame {
+  display: flex;
+  width: 37.5px;
+  align-items: center;
+  justify-content: center;
+}
+
+.box .addon {
+  display: inline-flex;
+  height: 20px;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 6px;
+}
+
+.box .input-fieldtext {
+  position: relative;
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-family: "Alef-Regular", Helvetica, sans-serif;
+  font-size: 12px;
+  color: #2d3748;
+  padding: 0 10px;
+  height: 100%;
+}
+
+.box .input-fieldtext::placeholder {
+  color: #a0aec0;
+  opacity: 1;
+}
+
+.box .div {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  font-family: "Alef-Regular", Helvetica, sans-serif;
+  font-weight: 400;
+  color: #a0aec0;
+  font-size: 12px;
+  text-align: right;
+  line-height: 18.0px;
+  pointer-events: none;
+}
+
+.box .vector-link { position: absolute; top: 12px; right: 18px; }
+.box .vector { width: 18px; height: 18px; }
+
+/* small responsive tweaks */
+@media (max-width: 720px) {
+  .box .text-wrapper { font-size: 14px; }
+  .box .breadcrumb { left: 10px; width: 160px; }
+}
